@@ -9,13 +9,14 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 @Config
 @TeleOp
 public class TestShooter extends LinearOpMode {
 
-    DcMotorEx motor_shooter;
+    DcMotorEx motor_shooter, motor_shooter_2;
 
     VoltageSensor sensor_volt;
 
@@ -28,13 +29,18 @@ public class TestShooter extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
-        motor_shooter = hardwareMap.get(DcMotorEx.class, "motor");
+        motor_shooter = hardwareMap.get(DcMotorEx.class, "shooter");
+        motor_shooter_2 = hardwareMap.get(DcMotorEx.class, "shooter2");
+
         sensor_volt = hardwareMap.voltageSensor.iterator().next();
         dashboard = FtcDashboard.getInstance();
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
-        motor_shooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         motor_shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        motor_shooter_2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        motor_shooter_2.setDirection(DcMotorSimple.Direction.REVERSE);
+        motor_shooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        motor_shooter_2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         waitForStart();
 
@@ -47,20 +53,28 @@ public class TestShooter extends LinearOpMode {
 
             power = Math.max(0.0, Math.min(1.0, power));
 
-            if(gamepad1.dpad_up)
+            if(gamepad1.dpad_up) {
                 motor_shooter.setPower(1 * ratio);
+                motor_shooter_2.setPower(1 * ratio);
+            }
 
-            if(gamepad1.dpad_down)
+            if(gamepad1.dpad_down) {
                 motor_shooter.setPower(-1 * ratio);
+                motor_shooter_2.setPower(-1 * ratio);
+            }
 
-            if(gamepad1.left_bumper)
+            if(gamepad1.left_bumper) {
                 motor_shooter.setPower(0);
+                motor_shooter_2.setPower(0);
+            }
 
-            if(gamepad1.right_bumper)
+            if(gamepad1.right_bumper) {
                 motor_shooter.setPower(1);
+                motor_shooter_2.setPower(0);
+            }
 
-            if(gamepad1.a)
-                motor_shooter.setPower(power + Kf);
+//            if(gamepad1.a)
+//                motor_shooter.setPower(power + Kf);
 
 
             telemetry.addData("current velocity: ", curr_velo);
