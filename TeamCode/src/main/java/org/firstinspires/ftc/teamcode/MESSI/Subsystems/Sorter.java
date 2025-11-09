@@ -11,37 +11,12 @@ import org.firstinspires.ftc.teamcode.MESSI.Utils.Globals;
 @Configurable
 public class Sorter {
     final TelemetryManager telemetryM;
-    Servo servo_sort, servo_drop;
+    Servo servo_sort, servo_latch;
     Globals globals;
-    public static double sort_upwards = 0.4, sort_return = 0, drop_upwards = 0.5, drop_return = 1;
+    Sensors sensors;
+    public static double sort_upwards = 0.4, sort_return = 0, drop_upwards = 0.5, latch_open =  0.37, latch_close = 0.5, latch_teleOP = 0.65;
     //INT 0 = G si 1 = P
     int[] target_order = new int[3];
-    int[] current_order = new int[3];
-    public Sorter(HardwareMap hardwareMap) {
-        servo_sort = hardwareMap.get(Servo.class, "sort");
-        servo_drop = hardwareMap.get(Servo.class, "drop");
-
-        servo_sort.setPosition(sort_return);
-        servo_drop.setPosition(drop_return);
-
-        globals = new Globals();
-
-        setTarget();
-        populate_current();
-
-        telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
-    }
-    public void populate_current() {
-        current_order[0] = -1;
-        current_order[1] = -1;
-        current_order[2] = -1;
-    }
-    public int returnTarget(int k) {
-        return target_order[k];
-    }
-    public int returnCurrent(int k) {
-        return current_order[k];
-    }
     public void setTarget() {
         switch (globals.motif) {
             case PPG:
@@ -68,6 +43,26 @@ public class Sorter {
         servo_sort.setPosition(sort_return);
     }
     public void drop() {
-        servo_drop.setPosition(drop_upwards);
+        servo_sort.setPosition(drop_upwards);
+    }
+    public void closeLatch() {
+        servo_latch.setPosition(latch_close);
+    }
+    public void openLatch() {
+        servo_latch.setPosition(latch_open);
+    }
+
+    public Sorter(HardwareMap hardwareMap) {
+        servo_sort = hardwareMap.get(Servo.class, "sort");
+        servo_latch = hardwareMap.get(Servo.class, "latch");
+
+        servo_sort.setPosition(sort_return);
+        servo_latch.setPosition(latch_teleOP);
+
+        globals = new Globals();
+        sensors = new Sensors(hardwareMap);
+        setTarget();
+
+        telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
     }
 }

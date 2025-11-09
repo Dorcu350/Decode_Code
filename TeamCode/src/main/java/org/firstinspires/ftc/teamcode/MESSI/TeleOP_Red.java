@@ -59,7 +59,7 @@ public class TeleOP_Red extends LinearOpMode {
 
         while(opModeIsActive()) {
             shooter.update_shooter();
-            intake.update_intake();
+            intake.update_intake(gamepad1);
             follower.update();
 
             targetHeading = (follower.getHeading() - sensors.getTx());

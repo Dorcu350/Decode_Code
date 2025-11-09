@@ -10,6 +10,7 @@ import java.util.List;
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.MESSI.Subsystems.Intake;
 import org.firstinspires.ftc.teamcode.MESSI.Subsystems.Sensors;
 import org.firstinspires.ftc.teamcode.MESSI.Subsystems.Shooter;
@@ -26,9 +27,8 @@ public class TeleOP_Blue extends LinearOpMode {
     Intake intake;
     Sensors sensors;
     Sorter sorter;
-    ElapsedTime timer;
+    ElapsedTime timer, timer_kick;
     Globals globals;;
-    boolean autoLock = true;
     double targetHeading;
     PIDFController controller;
 
@@ -40,6 +40,8 @@ public class TeleOP_Blue extends LinearOpMode {
         sorter = new Sorter(hardwareMap);
         globals = new Globals();
         timer = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
+        timer_kick = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
+
 
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startingPose);
@@ -51,6 +53,7 @@ public class TeleOP_Blue extends LinearOpMode {
         controller = new PIDFController(follower.constants.coefficientsHeadingPIDF);
 
         timer.startTime();
+        timer_kick.startTime();
 
         waitForStart();
 
@@ -61,20 +64,25 @@ public class TeleOP_Blue extends LinearOpMode {
         }
 
         while(opModeIsActive()) {
+            //FUNCTII UPDATE ----------------------------------------------------
+
             shooter.update_shooter();
-            intake.update_intake();
+            intake.update_intake(gamepad1);
             follower.update();
+
+            // DRIVE ----------------------------------------------------
 
             targetHeading = (follower.getHeading() - sensors.getTx());
             double error = targetHeading - follower.getHeading();
+            double turning = (gamepad1.left_trigger - gamepad1.right_trigger) * Math.abs((gamepad1.left_trigger - gamepad1.right_trigger));
             controller.setCoefficients(follower.constants.coefficientsHeadingPIDF);
             controller.updateError(error);
 
-            if(!autoLock) {
+            if(!globals.heading_lock) {
                 follower.setTeleOpDrive(
                         -gamepad1.left_stick_y,
                         -gamepad1.left_stick_x * 1.1,
-                        (gamepad1.left_trigger - gamepad1.right_trigger),
+                        turning, //(gamepad1.left_trigger - gamepad1.right_trigger)
                         true // Robot Centric
                 );
             }else {
@@ -86,21 +94,25 @@ public class TeleOP_Blue extends LinearOpMode {
                 );
             }
 
-            if(gamepad1.a)
-                autoLock = false;
-            if(gamepad1.b)
-                autoLock = true;
+            // SHOOTER ----------------------------------------------------
 
             if(gamepad1.right_bumper && timer.milliseconds() > 250) {
-                if(shooter.is_spinning())
-                    shooter.state = Shooter.State.IDLE;
-                if(shooter.state == Shooter.State.RUNNING)
+                if(!shooter.is_spinning()) {
                     shooter.state = Shooter.State.SHOOT;
+                }
+                else {
+                    shooter.state = Shooter.State.STOPPED;
+                }
+                globals.heading_lock = !globals.heading_lock;
                 timer.reset();
             }
 
-            if(gamepad1.dpad_left)
+            // INTAKE ----------------------------------------------------
+
+            if(gamepad1.dpad_left && timer.milliseconds() > 250) {
                 globals.sorter_active = !globals.sorter_active;
+                timer.reset();
+            }
 
             if(gamepad1.left_bumper) {
                 if (intake.is_intaking() && timer.milliseconds() > 250) {
@@ -111,33 +123,47 @@ public class TeleOP_Blue extends LinearOpMode {
                     timer.reset();
                 } else if (!intake.is_intaking() && globals.sorter_active && timer.milliseconds() > 250) {
                     intake.state = Intake.State.INTAKE_WHILE_SORTING;
+                    sorter.openLatch();
                     timer.reset();
                 }
             }
 
+            if(gamepad1.a && timer.milliseconds() > 250) {
+                intake.daPush = !intake.daPush;
+                timer.reset();
+            }
+
+            // TELEMETRY ----------------------------------------------------
+
+//            sorter.closeLatch();
+
 //            telemetry.addData("flywheel state running ", shooter.state == Shooter.State.RUNNING);
 //            telemetry.addData("flywheel state shoot ", shooter.state == Shooter.State.SHOOT);
 //            telemetry.addData("flywheel state idle ", shooter.state == Shooter.State.IDLE);
-//            telemetry.addData("sensor feed ", sensors.check_for_shooting());
+            telemetry.addData("sensor feed ", sensors.check_for_shooting());
 //            telemetry.addData("vel ", shooter.motor_shooter.getVelocity());
             telemetry.addData("tA ", sensors.getTa());
+            telemetry.addData("timer ", intake.timer.milliseconds());
+            telemetry.addData("current ", shooter.motor_shooter.getCurrent(CurrentUnit.MILLIAMPS));
+//            telemetry.addData("in sorting ", sensors.check_in_sorting());
             //            telemetry.addData("heading ", follower.getHeading());
 //            telemetry.addData("tx ", sensors.getTx());
+//            telemetry.addData("sug pula lok", globals.heading_lock);
 //            telemetry.addData("red ", sensors.showRed());
 //            telemetry.addData("blue " ,sensors.showBlue());
 //            telemetry.addData("green ", sensors.showGreen());
 //            telemetry.addData("este verde ", sensors.isGreen());
 //            telemetry.addData("este verde ", sensors.isPurple());
-            telemetry.addData("hue ", sensors.showHSV());
-            telemetry.addData("sorter activ ", globals.sorter_active);
-            telemetry.addData("k ", intake.k);
-            telemetry.addData("is green ", sensors.isGreen());
-            telemetry.addData("is purple ", sensors.isPurple());
-            telemetry.addData("target ", sorter.returnTarget(intake.k));
-            telemetry.addData("current ", sorter.returnCurrent(intake.k));
-            telemetry.addData("true tA, ", Shooter.lastValue);
+//            telemetry.addData("hue ", sensors.showHSV());
+//            telemetry.addData("sorter activ ", globals.sorter_active);
+//            telemetry.addData("is green ", sensors.isGreen());
+//            telemetry.addData("is purple ", sensors.isPurple());
+//            telemetry.addData("true tA, ", Shooter.lastValue);
+//            telemetry.addData("first ", intake.firstBall);
+//            telemetry.addData("second ", intake.secondBall);
 //            telemetry.addData("hue ", sensors.showHue());
             telemetry.update();
         }
     }
 }
+

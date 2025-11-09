@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.MESSI.Utils;
 
 public class Globals {
     public boolean sorter_active = false;
+    public boolean heading_lock = false;
     public enum MOTIF {
         PPG,
         PGP,
@@ -9,7 +10,7 @@ public class Globals {
     }
     public MOTIF motif;
     public Globals() {
-       motif = MOTIF.PPG;
+       motif = MOTIF.PGP;
     }
     //ENUMS
 

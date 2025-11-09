@@ -30,6 +30,10 @@ public class Sensors {
         return 0;
     }
 
+    public boolean onTarget() {
+        return getTx() < 1;
+    }
+
     public double getTa() {
         LLResult result = limelight.getLatestResult();
 
@@ -55,6 +59,9 @@ public class Sensors {
         LLResult result = limelight.getLatestResult();
 
         return result != null && result.isValid();
+    }
+    public boolean tagInRange() {
+        return getTa() <= 0.45 && getTa() >= 0.29;
     }
 
     public boolean isGreen() {

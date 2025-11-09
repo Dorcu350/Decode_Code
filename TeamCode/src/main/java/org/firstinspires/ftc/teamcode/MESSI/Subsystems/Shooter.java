@@ -15,7 +15,9 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.MESSI.Utils.Globals;
 
 @Configurable
@@ -25,11 +27,11 @@ public class Shooter {
     Globals globals;
     public boolean start_your_engines = false;
     public DcMotorEx motor_shooter, motor_shooter_2;
-    public Servo servo_hood, servo_feeder;
-    public static double kP = 1.05, kI = 0, kD = 0, kF = 0.01;
-    public static int target_velocity = 1500;
-    public static double feeder_jos = 0.05, feeder_sus = 0.17;
-    public static double hood_test = 0.92; //0.92 in spate de tot
+    public Servo servo_hood, servo_feeder, servo_block;
+    public static double kP = 0.01, kI = 0, kD = 0, kF = 0.63;
+    public static int target_velocity = 1300;
+    public static double feeder_jos = 0.037, feeder_sus = 0.18, block_open = 0.7, block_close = 0.93;
+    public static double hood_test = 0.84; //0.86 in spate de tot
     PIDCoefficients coef = new PIDCoefficients(kP, kI, kD);
     InterpLUT LUT = new InterpLUT();
     BasicPID pid = new BasicPID(coef);
@@ -46,18 +48,7 @@ public class Shooter {
         double pow;
         double error = abs(target_velocity - vel);
 
-        if(sensors.seeingTag()) {
-            double raw = sensors.getTa();
-
-            if(Math.abs(raw - lastValue) > deadBand) {
-                lastValue = raw;
-                servo_hood.setPosition(LUT.get(lastValue));
-            }
-        }
-
-//        servo_hood.setPosition(hood_test);
-//
-//        servo_hood.setPosition(hood_test);
+        servo_hood.setPosition(hood_test);
 
         if(start_your_engines) {
             pow = pid.calculate(target_velocity, vel);
@@ -67,58 +58,65 @@ public class Shooter {
         }
 
         switch(state) {
-            case RUNNING:
-                start_your_engines = true;
-                if(!sensors.check_for_shooting())
-                    servo_feeder.setPosition(feeder_jos);
-                break;
             case SHOOT:
+                servo_block.setPosition(block_open);
                 start_your_engines = true;
-                if(sensors.check_for_shooting() && error <= 20) {
+
+//                if(sensors.seeingTag() && sensors.tagInRange()) {
+//                    double raw = sensors.getTa();
+//
+//                    if(Math.abs(raw - lastValue) > deadBand) {
+//                        lastValue = raw;
+//                        servo_hood.setPosition(LUT.get(lastValue));
+//                    }
+//                }
+
+                if(sensors.check_for_shooting() && error == 0 && sensors.onTarget())
                     servo_feeder.setPosition(feeder_sus);
-                    state = State.IDLE;
-                }
-                break;
-            case IDLE:
-                start_your_engines = true;
-                if(!sensors.check_for_shooting())
+
+                if(!sensors.check_for_shooting() && is_over_current())
                     servo_feeder.setPosition(feeder_jos);
-                if(error <= 40)
-                    state = State.RUNNING;
+
                 break;
             case STOPPED:
                 start_your_engines = false;
+                servo_feeder.setPosition(feeder_jos);
+                servo_block.setPosition(block_close);
                 motor_shooter_2.setPower(0);
                 motor_shooter.setPower(0);
                 break;
         }
     }
-
+    public boolean is_over_current() {
+        return motor_shooter.getCurrent(CurrentUnit.MILLIAMPS) > 3000;
+    }
     public boolean is_spinning() {
-        return motor_shooter.getPower() == 0;
+        return motor_shooter.getPower() != 0;
     }
     public Shooter(HardwareMap hardwareMap) {
         motor_shooter = hardwareMap.get(DcMotorEx.class, "shooter");
         motor_shooter_2 = hardwareMap.get(DcMotorEx.class, "shooter2");
         servo_hood = hardwareMap.get(Servo.class, "hood");
         servo_feeder = hardwareMap.get(Servo.class, "feeder");
+        servo_block = hardwareMap.get(Servo.class, "block");
 
         motor_shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         motor_shooter_2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        motor_shooter_2.setDirection(DcMotorSimple.Direction.REVERSE);
         motor_shooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         motor_shooter_2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        motor_shooter_2.setDirection(DcMotorSimple.Direction.REVERSE);
+        motor_shooter.setDirection(DcMotorSimple.Direction.REVERSE);
 
         servo_feeder.setPosition(feeder_jos);
         servo_hood.setPosition(hood_test);
+        servo_block.setPosition(block_close);
 
-        LUT.add(0.27, 0.915);
-        LUT.add(0.3, 0.915);
-        LUT.add(0.35, 0.89);
-        LUT.add(0.36, 0.88);
-        LUT.add(0.43, 0.87);
-        LUT.add(0.48, 0.865);
-//        LUT.add(0.37, 0.85);
+        LUT.add(0.26, 0.8);
+        LUT.add(0.29, 0.8);
+        LUT.add(0.32, 0.79);
+        LUT.add(0.38, 0.78);
+        LUT.add(0.45, 0.76);
+        LUT.add(0.47, 0.75);
         LUT.createLUT();
 
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
