@@ -8,13 +8,17 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.MESSI.Utils.Globals;
 
-@Configurable
+import dev.frozenmilk.dairy.cachinghardware.CachingServo;
+
+//@Configurable
 public class Sorter {
     final TelemetryManager telemetryM;
-    Servo servo_sort, servo_latch;
+    CachingServo servo_sort, servo_latch;
     Globals globals;
     Sensors sensors;
-    public static double sort_upwards = 0.4, sort_return = 0, drop_upwards = 0.5, latch_open =  0.37, latch_close = 0.5, latch_teleOP = 0.65;
+
+    // 0.4 sort upwards 1
+    public static double sort_upwards = 0.4, sort_return = 0, drop_upwards = 0.5, latch_open =  0.37, latch_close = 0.5, latch_teleOP = 0.67;
     //INT 0 = G si 1 = P
     int[] target_order = new int[3];
     public void setTarget() {
@@ -53,8 +57,8 @@ public class Sorter {
     }
 
     public Sorter(HardwareMap hardwareMap) {
-        servo_sort = hardwareMap.get(Servo.class, "sort");
-        servo_latch = hardwareMap.get(Servo.class, "latch");
+        servo_sort = new CachingServo(hardwareMap.get(Servo.class, "sort"));
+        servo_latch = new CachingServo(hardwareMap.get(Servo.class, "latch"));
 
         servo_sort.setPosition(sort_return);
         servo_latch.setPosition(latch_teleOP);

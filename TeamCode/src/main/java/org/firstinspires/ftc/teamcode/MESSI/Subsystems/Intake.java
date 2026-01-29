@@ -14,10 +14,12 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.MESSI.Utils.Globals;
 
-@Configurable
+import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
+
+//@Configurable
 public class Intake {
     final TelemetryManager telemetryM;
-    DcMotorEx motor_intake;
+    public CachingDcMotorEx motor_intake;
     Sorter sorter;
     Servo servo_block;
     Sensors sensors;
@@ -25,16 +27,16 @@ public class Intake {
     Shooter shooter;
     public enum State {
         INTAKE,
+        REVERSE,
         INTAKE_WHILE_SORTING,
         STOP
     }
     public State state;
     int detected_color = -1;
-    public static double push_ball = 0.85, let_ball = 0;
-    public ElapsedTime timer = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
-    public boolean firstBall = false, secondBall = false, hasGreen = false, inSorter = false, eject = false, aDropat = false, daPush = false;
+    public static double push_ball = 0.8, let_ball = 0;
+    ElapsedTime timerReverse = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
+    public boolean firstBall = false, secondBall = false, thirdBall = false ,hasGreen = false, inSorter = false, eject = false, aDropat = false, daPush = false, hasReversed = false;
     public void update_intake(Gamepad gamepad) {
-
         if(daPush)
             pushBall();
         else
@@ -44,29 +46,45 @@ public class Intake {
             case STOP:
                 motor_intake.setPower(0);
                 sorter.resetIndexer();
-                if(shooter.is_spinning() && !sensors.check_for_shooting()) {
-                    state = State.INTAKE;
-                    timer.reset();
+
+                if(Shooter.start_feeding) {
+                    if(!sensors.kickerRetracted())
+                        state = State.REVERSE;
+                    else if(Shooter.has_shot)
+                        state = State.INTAKE;
                 }
+
+                if(Shooter.is_idle && !sensors.check_for_shooting())
+                    state = State.INTAKE;
+
                 break;
             case INTAKE:
                 motor_intake.setPower(1);
-                if(!sensors.check_for_shooting() && timer.milliseconds() > 700 && timer.milliseconds() < 750)
-                    daPush = true;
-                if(timer.milliseconds() > 1100)
-                    daPush = false;
-                if(timer.milliseconds() > 4000)
-                    timer.reset();
+                daPush = false;
+
+                if(Shooter.start_feeding && !sensors.kickerRetracted())
+                    state = State.STOP;
 
                 if(is_over_current())
                     gamepad.rumble(250);
 
-                if(sensors.check_for_shooting() && shooter.is_spinning())
+                if(Shooter.is_idle && sensors.check_for_shooting()) {
+                    shooter.letBall();
                     state = State.STOP;
+                }
+
+
+                break;
+            case REVERSE:
+                motor_intake.setPower(-0.1);
+
+                if(sensors.kickerRetracted())
+                    state = State.INTAKE;
 
                 break;
             case INTAKE_WHILE_SORTING:
-                daPush = true;
+                daPush = false;
+
                 if(!eject)
                     motor_intake.setPower(0.8);
                 else if(sensors.check_in_sorting())
@@ -205,23 +223,32 @@ public class Intake {
         return motor_intake.getPower() != 0;
     }
     public double get_current() {return motor_intake.getCurrent(CurrentUnit.MILLIAMPS);}
-    public boolean is_over_current() {return get_current() > 1000;};
+    public boolean is_over_current() {return get_current() > 1700;}
+    public boolean current_rev() {return get_current() > 10;}
+
+    public void reset_intake() {
+        firstBall = false;
+        secondBall = false;
+        thirdBall = false;
+    }
 
     public Intake(HardwareMap hardwareMap) {
-        motor_intake = hardwareMap.get(DcMotorEx.class, "intake");
+        motor_intake = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "intake"));
         servo_block = hardwareMap.get(Servo.class, "drop");
 
         motor_intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motor_intake.setDirection(DcMotorSimple.Direction.REVERSE);
+        motor_intake.setCachingTolerance(0.05);
 
         state = State.STOP;
 
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
 
         sorter = new Sorter(hardwareMap);
+        servo_block.setPosition(let_ball);
         globals = new Globals();
         shooter = new Shooter(hardwareMap);
         sensors = new Sensors(hardwareMap);
-        timer.startTime();
+        timerReverse.startTime();
     }
 }
