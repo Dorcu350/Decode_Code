@@ -32,13 +32,10 @@ public class Shooter {
     Sensors sensors;
     public CachingDcMotorEx motor_shooter, motor_shooter_2, motor_index;
     public CachingServo servo_hood;
-    public static double kP = 0.03, kI = 0, kD = 0, kS = 0.055, kV = 0.00035, kA = 0;
+    public static double kP = 0.04, kI = 0, kD = 0, kS = 0.07, kV = 0.00035, kA = 0;
     final double x_goal_blue = 0, y_goal_blue = 144, x_goal_red = 144, y_goal_red = 144;
     public static double target_velocity, ppr = 28, target_far = 1020, target_close = 940, target_stopped = 0;
-    public static double block_open = 0.72, block_close = 0.69;
-    public static double main_jos = 0.58, main_sus = 0.76;
-//     public static double main_jos = 0.13, main_sus = 0.19, main_full = 0.24;
-    public static double hood_test = 0.11, error = target_far , hood_close = 0.65 ; //067 in spate de tot
+    public static double hood_test = 0.095, error = target_far; //0095 in spate de tot
     public double distance_from_goal;
     public static boolean initial_release = false, start_your_engines = false, auto = false;
     PIDCoefficients coef = new PIDCoefficients(kP, kI, kD);
@@ -84,26 +81,36 @@ public class Shooter {
             distance_from_goal = Math.hypot(y_goal_red - y, x_goal_red - x);
 
 
-        if(distance_from_goal >= 135 && distance_from_goal <= 160)
+        if(distance_from_goal >= 135 && distance_from_goal <= 160) {
             desired = regression_far.getHoodAngle(distance_from_goal, vel);
-        else if(distance_from_goal <= 100 && distance_from_goal >= 60)
-            desired = regression.getHoodAngle(distance_from_goal, vel);
+            servo_hood.setPosition(desired);
+        }
+        else
+            servo_hood.setPosition(hood_test);
 
-        servo_hood.setPosition(desired);
+//        else if(distance_from_goal <= 100 && distance_from_goal >= 60)
+//            desired = regression.getHoodAngle(distance_from_goal, vel);
+
+//        servo_hood.setPosition(desired);
+
+//        servo_hood.setPosition(hood_test);
 
         switch(state) {
             case IDLE:
                 Globals.pre_spin = true;
+                Globals.start_feeding = false;
                 initial_release = true;
                 start_your_engines = true;
-
+                motor_index.setPower(0);
 
                 if(distance_from_goal >= 135 && distance_from_goal <= 160)
                     target_velocity = vel_lut_far.get(distance_from_goal);
-                else if(distance_from_goal <= 100 && distance_from_goal >= 60)
-                    target_velocity = vel_lut.get(distance_from_goal);
+//                else if(distance_from_goal <= 100 && distance_from_goal >= 60)
+//                    target_velocity = vel_lut.get(distance_from_goal);
                 else
-                    target_velocity = 600;
+                   target_velocity = 900;
+
+//                target_velocity = target_close;
 
                 break;
             case SHOOT:
@@ -113,10 +120,12 @@ public class Shooter {
 
                 if(distance_from_goal >= 135 && distance_from_goal <= 160)
                     target_velocity = vel_lut_far.get(distance_from_goal);
-                else if(distance_from_goal <= 100 && distance_from_goal >= 60)
-                    target_velocity = vel_lut.get(distance_from_goal);
-                else
-                    target_velocity = 600;
+//                else if(distance_from_goal <= 100 && distance_from_goal >= 60)
+//                    target_velocity = vel_lut.get(distance_from_goal);
+               else
+                  target_velocity = 900;
+
+//                target_velocity = target_close;
 
                 if(noError(error))
                     motor_index.setPower(1);
@@ -127,7 +136,7 @@ public class Shooter {
 
                 Globals.start_feeding = false;
                 Globals.pre_spin = false;
-                start_your_engines = false;
+                start_your_engines = true;
 
                 motor_shooter.setPower(0);
                 motor_shooter_2.setPower(0);
@@ -136,7 +145,7 @@ public class Shooter {
         }
     }
     public boolean is_spinning() {
-        return (target_velocity == target_far || target_velocity == target_close) && state == State.RUNNING;
+        return state == State.RUNNING;
     }
 
     public double getRpm(double velocity) {
@@ -198,39 +207,39 @@ public class Shooter {
 
 //
 
-        regression_far.add(135, 960, 0.13);
-        regression_far.add(135, 1040, 0.14);
+        regression_far.add(135, 940, 0.07);
+        regression_far.add(135, 1000, 0.06);
 
-        regression_far.add(140, 1000, 0.13);
-        regression_far.add(140, 1040, 0.14);
+        regression_far.add(140, 960, 0.07);
+        regression_far.add(140, 1020, 0.06);
 
-        regression_far.add(145, 1020, 0.13);
-        regression_far.add(145, 1060, 0.14);
+        regression_far.add(145, 980, 0.07);
+        regression_far.add(145, 1040, 0.06);
 
-        regression_far.add(150, 1040, 0.13);
-        regression_far.add(150, 1080, 0.14);
+        regression_far.add(150, 1000, 0.07);
+        regression_far.add(150, 1060, 0.06);
 
-        regression_far.add(155, 1080, 0.13);
-        regression_far.add(155, 1120, 0.14);
+        regression_far.add(155, 1020, 0.07);
+        regression_far.add(155, 1080, 0.06);
 
-        regression_far.add(160, 1080, 0.13);
-        regression_far.add(160, 1120, 0.14);
+        regression_far.add(160, 1040, 0.07);
+        regression_far.add(160, 1100, 0.06);
 
         regression_far.create();
 
 
-        vel_lut_far.add(135, 1040);
-        vel_lut_far.add(140, 1040);
-        vel_lut_far.add(145, 1060);
-        vel_lut_far.add(150, 1080);
-        vel_lut_far.add(155, 1120);
-        vel_lut_far.add(160, 1120);
+        vel_lut_far.add(135, 1000);
+        vel_lut_far.add(140, 1020);
+        vel_lut_far.add(145, 1040);
+        vel_lut_far.add(150, 1060);
+        vel_lut_far.add(155, 1080);
+        vel_lut_far.add(160, 1100);
 
         vel_lut_far.createLUT();
 
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
         sensors = new Sensors(hardwareMap);
-        state = State.STOPPED;
+        state = State.IDLE;
         target_velocity = target_stopped;
     }
 }

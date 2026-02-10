@@ -24,17 +24,18 @@ public class Intake {
     public CachingDcMotorEx motor_intake;
     public CachingServo servo_shifter;
     public static double shifter_intake = 0.075  , shifter_hang;
+    public static int target_hang;
     VoltageSensor voltageSensor;
     Sensors sensors;
     public enum State {
         INTAKE,
         REVERSE,
         STOP,
-        FORCE_REVERSE
+        FORCE_REVERSE,
+        HANG
     }
     public State state;
     public void update_intake(Gamepad gamepad) {
-        double ratio = 12 / voltageSensor.getVoltage();
         servo_shifter.setPosition(shifter_intake);
 
         switch(state) {
@@ -45,13 +46,23 @@ public class Intake {
                     state = State.INTAKE;
                 break;
             case INTAKE:
-                motor_intake.setPower(1 * ratio);
+                motor_intake.setPower(1);
 
                 if(is_over_current())
                     gamepad.rumble(250);
                 break;
             case FORCE_REVERSE:
                 motor_intake.setPower(-1);
+                break;
+            case HANG:
+                motor_intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                motor_intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                motor_intake.setTargetPosition(0);
+                motor_intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                motor_intake.setTargetPosition(target_hang);
+                motor_intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                motor_intake.setPower(1);
                 break;
         }
     }

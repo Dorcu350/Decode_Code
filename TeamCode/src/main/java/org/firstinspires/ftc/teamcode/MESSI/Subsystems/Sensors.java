@@ -105,9 +105,9 @@ public class Sensors {
 
     public Sensors(HardwareMap hardwareMap) {
         sensor_intake = hardwareMap.get(ColorSensor.class, "color");
-        sensor_shooting = hardwareMap.get(DigitalChannel.class, "feed");
-        sensor_shooting_2 = hardwareMap.get(DigitalChannel.class, "feed2");
-        sensor_sorter = hardwareMap.get(DigitalChannel.class, "sorter");
+//        sensor_shooting = hardwareMap.get(DigitalChannel.class, "feed");
+//        sensor_shooting_2 = hardwareMap.get(DigitalChannel.class, "feed2");
+//        sensor_sorter = hardwareMap.get(DigitalChannel.class, "sorter");
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
         fourth_wire = hardwareMap.get(AnalogInput.class, "4");

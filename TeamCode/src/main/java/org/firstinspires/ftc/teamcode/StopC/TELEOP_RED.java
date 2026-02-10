@@ -20,7 +20,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 @TeleOp
 @Configurable
 public class TELEOP_RED extends LinearOpMode {
-    public static Pose startingPose = new Pose(8.8, 9.4, Math.toRadians(0));
+    public static Pose startingPose = new Pose(9.2, 8.5, Math.toRadians(0));
 
     Follower follower;
     Shooter shooter;
@@ -29,7 +29,6 @@ public class TELEOP_RED extends LinearOpMode {
     Turret turret;
     ElapsedTime timer;
     ElapsedTime loops = new ElapsedTime();
-    PIDFController controller;
     @Override
     public void runOpMode() throws InterruptedException {
         sensors = new Sensors(hardwareMap);
@@ -46,11 +45,12 @@ public class TELEOP_RED extends LinearOpMode {
         Globals.alliance = Globals.ALLIANCE.RED;
         Globals.faze = Globals.FAZE.TELEOP;
 
-        controller = new PIDFController(follower.constants.coefficientsHeadingPIDF);
-
         timer.startTime();
         loops.reset();
-        telemetry.setMsTransmissionInterval(11);
+//        telemetry.setMsTransmissionInterval(11);
+
+        telemetry.addLine("Te aves bahtalo, patroane!");
+        telemetry.update();
 
         waitForStart();
 
@@ -110,20 +110,20 @@ public class TELEOP_RED extends LinearOpMode {
             // SHOOTER ----------------------------------------------------
 
             if(rightBumper && timer.milliseconds() > 250) {
-                if(shooter.state == Shooter.State.STOPPED) {
-                    Shooter.initial_release = true;
-                    shooter.state = Shooter.State.IDLE;
-                }
-                else if(shooter.state == Shooter.State.IDLE)
+//                if(shooter.state == Shooter.State.STOPPED) {
+//                    Shooter.initial_release = true;
+//                    shooter.state = Shooter.State.IDLE;
+//                }
+                if(shooter.state == Shooter.State.IDLE)
                     shooter.state = Shooter.State.SHOOT;
-                else
-                    shooter.state = Shooter.State.STOPPED;
+                else if(shooter.state == Shooter.State.SHOOT)
+                    shooter.state = Shooter.State.IDLE;
 
                 timer.reset();
             }
 
-            if(bPressed)
-                shooter.state = Shooter.State.STOPPED;
+//            if(bPressed)
+//                shooter.state = Shooter.State.STOPPED;
 
             // INTAKE  ----------------------------------------------------
 
@@ -148,8 +148,8 @@ public class TELEOP_RED extends LinearOpMode {
             // TELEMETRY ----------------------------------------------------
 
 //            telemetry.addData("flywheel state running ", shooter.state == Shooter.State.STOPPED);
-//            telemetry.addData("flywheel state shoot ", shooter.state == Shooter.State.SHOOT);
-//            telemetry.addData("flywheel state idle ", shooter.state == Shooter.State.IDLE);
+            telemetry.addData("flywheel state shoot ", shooter.state == Shooter.State.SHOOT);
+            telemetry.addData("flywheel state idle ", shooter.state == Shooter.State.IDLE);
 //            telemetry.addData("sensor feed ", sensors.check_for_shooting());
             telemetry.addData("vel ", shooter.motor_shooter.getVelocity());
 //            telemetry.addData("kicker pos ", sensors.readKickerPos()); //0.0006
@@ -188,6 +188,7 @@ public class TELEOP_RED extends LinearOpMode {
             telemetry.addData("distance from goal ", shooter.distance_from_goal);
             telemetry.addData("error ", Shooter.error);
             telemetry.addData("ready to shoot ", sensors.checkForShooting());
+            telemetry.addData("desired ", Shooter.desired);
 //            telemetry.addData("increment ", Turret.increment2);
 //            telemetry.addData("in sorting ", sensors.check_in_sorting());
             //            telemetry.addData("heading ", follower.getHeading());
@@ -206,6 +207,7 @@ public class TELEOP_RED extends LinearOpMode {
 //            telemetry.addData("first ", intake.firstBall);
 //            telemetry.addData("second ", intake.secondBall);
 //            telemetry.addData("hue ", sensors.showHue());
+
             telemetry.update();
         }
     }
