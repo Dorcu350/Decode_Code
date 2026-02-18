@@ -23,29 +23,28 @@ public class Intake {
     final TelemetryManager telemetryM;
     public CachingDcMotorEx motor_intake;
     public CachingServo servo_shifter;
-    public static double shifter_intake = 0.075  , shifter_hang;
-    public static int target_hang;
+    public static double shifter_intake = 0.07, shifter_hang = 0.13;
+    public static int target_hang = 200;
     VoltageSensor voltageSensor;
     Sensors sensors;
     public enum State {
         INTAKE,
-        REVERSE,
         STOP,
         FORCE_REVERSE,
         HANG
     }
     public State state;
     public void update_intake(Gamepad gamepad) {
-        servo_shifter.setPosition(shifter_intake);
-
         switch(state) {
             case STOP:
+                shift_intake();
                 motor_intake.setPower(0);
 
                 if(Globals.start_feeding)
                     state = State.INTAKE;
                 break;
             case INTAKE:
+                shift_intake();
                 motor_intake.setPower(1);
 
                 if(is_over_current())
@@ -55,16 +54,27 @@ public class Intake {
                 motor_intake.setPower(-1);
                 break;
             case HANG:
-                motor_intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                motor_intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                motor_intake.setTargetPosition(0);
-                motor_intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                shift_hang();
+                if(sensors.shifterInHang()) {
+                    motor_intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                    motor_intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                    motor_intake.setTargetPosition(0);
+                    motor_intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-                motor_intake.setTargetPosition(target_hang);
-                motor_intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                motor_intake.setPower(1);
+                    motor_intake.setTargetPosition(target_hang);
+                    motor_intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    motor_intake.setPower(1);
+                }
+                else
+                    motor_intake.setPower(0.1);
                 break;
         }
+    }
+    public void shift_hang() {
+        servo_shifter.setPosition(shifter_hang);
+    }
+    public void shift_intake() {
+        servo_shifter.setPosition(shifter_intake);
     }
     public boolean is_intaking() {
         return motor_intake.getPower() != 0;
@@ -72,16 +82,16 @@ public class Intake {
     public double get_current() {return motor_intake.getCurrent(CurrentUnit.MILLIAMPS);}
     public boolean is_over_current() {return get_current() > 2500;}
     public Intake(HardwareMap hardwareMap) {
-        motor_intake = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "intake"));
+        motor_intake  = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "intake"));
         servo_shifter = new CachingServo(hardwareMap.get(Servo.class, "shifter"));
 
-        motor_intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        motor_intake.setDirection(DcMotorSimple.Direction.REVERSE);
-        motor_intake.setCachingTolerance(0.05);
+        motor_intake.setZeroPowerBehavior    (DcMotor.ZeroPowerBehavior.BRAKE);
+        motor_intake.setDirection            (DcMotorSimple.Direction.REVERSE);
+        motor_intake.setCachingTolerance     (0.05);
 
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
 
-        servo_shifter.setPosition(shifter_intake);
+        shift_intake();
 
         state = State.STOP;
 

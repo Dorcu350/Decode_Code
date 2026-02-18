@@ -15,6 +15,7 @@ import com.bylazar.telemetry.TelemetryManager;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -32,18 +33,18 @@ public class Shooter {
     Sensors sensors;
     public CachingDcMotorEx motor_shooter, motor_shooter_2, motor_index;
     public CachingServo servo_hood;
-    public static double kP = 0.04, kI = 0, kD = 0, kS = 0.07, kV = 0.00035, kA = 0;
-    final double x_goal_blue = 0, y_goal_blue = 144, x_goal_red = 144, y_goal_red = 144;
-    public static double target_velocity, ppr = 28, target_far = 1020, target_close = 940, target_stopped = 0;
-    public static double hood_test = 0.095, error = target_far; //0095 in spate de tot
+    public static double kP = 0.01, kI = 0, kD = 0, kS = 0.065, kV = 0.00036, kA = 0;
+    final double x_goal_blue = 0, y_goal_blue = 139.5, x_goal_red = 139.5, y_goal_red = 139.5;
+    public static double target_velocity, ppr = 28, target_prespin = 940, target_stopped = 0;
+    public static double hood_test = 0.34, error = target_prespin; //0.34 in spate de tot
     public double distance_from_goal;
     public static boolean initial_release = false, start_your_engines = false, auto = false;
-    PIDCoefficients coef = new PIDCoefficients(kP, kI, kD);
-    FeedforwardCoefficients coef_ff = new FeedforwardCoefficients(kV, kA, kS);
-    public static double hoodDeadband = 0.01, lastHoodPosition = 0, desired;
-    BasicPID pid = new BasicPID(coef);
-    public ElapsedTime timer = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
-    BasicFeedforward feedforward = new BasicFeedforward(coef_ff);
+    public static double desired;
+    LUT<Double, Integer> prespin_velocity = new LUT<Double, Integer>()
+    {{
+       add(85.0, 900);
+       add(130.0, 1300);
+    }};
     public enum State {
         IDLE,
         STOPPED,
@@ -56,23 +57,16 @@ public class Shooter {
     InterpLUT vel_lut = new InterpLUT();
     InterpLUT vel_lut_far = new InterpLUT();
 
-
-    public void update_shooter(double x, double y) {
+    public void update_shooter(double x, double y, Gamepad gamepad) {
         double vel = motor_shooter.getVelocity();
-        double fb, ff;
+//        double fb, ff;
 
         if(initial_release)
             error = abs(target_velocity - vel);
 
         if(start_your_engines) {
-            fb = pid.calculate(target_velocity, vel);
-            ff = feedforward.calculate(vel, target_velocity, 0);
-
-            ff = max(0, Math.min(1, ff));
-            fb = max(0, Math.min(1, fb));
-
-            motor_shooter.setPower(fb + ff);
-            motor_shooter_2.setPower(fb + ff);
+            motor_shooter.setPower((kV * target_velocity) + (kP * (target_velocity - vel)) + kS);
+            motor_shooter_2.setPower((kV * target_velocity) + (kP * (target_velocity - vel)) + kS);
         }
 
         if (Globals.alliance == Globals.ALLIANCE.BLUE)
@@ -85,15 +79,13 @@ public class Shooter {
             desired = regression_far.getHoodAngle(distance_from_goal, vel);
             servo_hood.setPosition(desired);
         }
-        else
+        else if(distance_from_goal <= 110 && distance_from_goal >= 60) {
+            desired = regression.getHoodAngle(distance_from_goal, vel);
+            servo_hood.setPosition(desired);
+        }else
             servo_hood.setPosition(hood_test);
 
-//        else if(distance_from_goal <= 100 && distance_from_goal >= 60)
-//            desired = regression.getHoodAngle(distance_from_goal, vel);
 
-//        servo_hood.setPosition(desired);
-
-//        servo_hood.setPosition(hood_test);
 
         switch(state) {
             case IDLE:
@@ -105,12 +97,13 @@ public class Shooter {
 
                 if(distance_from_goal >= 135 && distance_from_goal <= 160)
                     target_velocity = vel_lut_far.get(distance_from_goal);
-//                else if(distance_from_goal <= 100 && distance_from_goal >= 60)
-//                    target_velocity = vel_lut.get(distance_from_goal);
+                else if(distance_from_goal <= 110 && distance_from_goal >= 60)
+                    target_velocity = vel_lut.get(distance_from_goal);
                 else
-                   target_velocity = 900;
+                   target_velocity = prespin_velocity.getClosest(distance_from_goal);
 
-//                target_velocity = target_close;
+//                target_velocity = target_prespin;
+
 
                 break;
             case SHOOT:
@@ -118,14 +111,16 @@ public class Shooter {
                 Globals.start_feeding = true;
                 Globals.pre_spin = false;
 
+                gamepad.rumble(250);
+
                 if(distance_from_goal >= 135 && distance_from_goal <= 160)
                     target_velocity = vel_lut_far.get(distance_from_goal);
-//                else if(distance_from_goal <= 100 && distance_from_goal >= 60)
-//                    target_velocity = vel_lut.get(distance_from_goal);
+                else if(distance_from_goal <= 110 && distance_from_goal >= 60)
+                    target_velocity = vel_lut.get(distance_from_goal);
                else
-                  target_velocity = 900;
+                  target_velocity = prespin_velocity.getClosest(distance_from_goal);
 
-//                target_velocity = target_close;
+//                target_velocity = target_prespin;
 
                 if(noError(error))
                     motor_index.setPower(1);
@@ -136,7 +131,7 @@ public class Shooter {
 
                 Globals.start_feeding = false;
                 Globals.pre_spin = false;
-                start_your_engines = true;
+                start_your_engines = false;
 
                 motor_shooter.setPower(0);
                 motor_shooter_2.setPower(0);
@@ -164,8 +159,7 @@ public class Shooter {
         motor_shooter   = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "shooter"));
         motor_shooter_2 = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "shooter2"));
         motor_index     = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "index"));
-
-        servo_hood          = new CachingServo(hardwareMap.get(Servo.class, "hood"));
+        servo_hood      = new CachingServo(hardwareMap.get(Servo.class, "hood"));
 
         motor_shooter.  setZeroPowerBehavior    (DcMotor.ZeroPowerBehavior.FLOAT);
         motor_shooter_2.setZeroPowerBehavior    (DcMotor.ZeroPowerBehavior.FLOAT);
@@ -175,65 +169,99 @@ public class Shooter {
         motor_index.    setDirection            (DcMotorSimple.Direction.REVERSE);
 
 
-        motor_shooter.setCachingTolerance(0.001);
+        motor_shooter.  setCachingTolerance(0.001);
         motor_shooter_2.setCachingTolerance(0.001);
 
-        timer.startTime();
 
-        vel_lut.add(60, 740);
-        vel_lut.add(70, 760);
-        vel_lut.add(80, 780);
-        vel_lut.add(90, 820);
-        vel_lut.add(100, 860);
+        vel_lut.add(60, 940);
+        vel_lut.add(70, 960);
+        vel_lut.add(80, 980);
+        vel_lut.add(90, 1040);
+        vel_lut.add(100, 1100);
+        vel_lut.add(110, 1160);
 
         vel_lut.createLUT();
 
-        regression.add(60, 700, 0.11);
-        regression.add(60, 740, 0.12);
+        regression.add(60, 920, 0.34);
+        regression.add(60, 940, 0.34);
 
-        regression.add(70, 720, 0.11);
-        regression.add(70, 760, 0.12);
+        regression.add(70, 940, 0.34);
+        regression.add(70, 960, 0.34);
 
-        regression.add(80, 740, 0.11);
-        regression.add(80, 780, 0.12);
+        regression.add(80, 940, 0.34);
+        regression.add(80, 980, 0.33);
 
-        regression.add(90, 780, 0.11);
-        regression.add(90, 820, 0.12);
+        regression.add(90, 1000, 0.34);
+        regression.add(90, 1040, 0.33);
 
-        regression.add(100, 820, 0.11);
-        regression.add(100, 860, 0.12);
+        regression.add(100, 1060, 0.34);
+        regression.add(100, 1100, 0.33);
+
+        regression.add(110, 1120, 0.33);
+        regression.add(110, 1160, 0.32);
 
         regression.create();
 
 //
 
-        regression_far.add(135, 940, 0.07);
-        regression_far.add(135, 1000, 0.06);
+//        regression_far.add(135, 920, 0.08);
+        regression_far.add(135, 1200, 0.31);
+        regression_far.add(135, 1300, 0.31);
 
-        regression_far.add(140, 960, 0.07);
-        regression_far.add(140, 1020, 0.06);
+//        regression_far.add(137.5, 960, 0.08);
+        regression_far.add(137.5, 1200, 0.31);
+        regression_far.add(137.5, 1300, 0.31);
 
-        regression_far.add(145, 980, 0.07);
-        regression_far.add(145, 1040, 0.06);
+//        regression_far.add(140, 940, 0.085);
+        regression_far.add(140, 1220, 0.31);
+        regression_far.add(140, 1320, 0.31);
 
-        regression_far.add(150, 1000, 0.07);
-        regression_far.add(150, 1060, 0.06);
+//        regression_far.add(142.5, 940, 0.085);
+        regression_far.add(142.5, 1220, 0.31);
+        regression_far.add(142.5, 1320, 0.31);
 
-        regression_far.add(155, 1020, 0.07);
-        regression_far.add(155, 1080, 0.06);
+//        regression_far.add(145, 960, 0.085);
+        regression_far.add(145, 1240, 0.31);
+        regression_far.add(145, 1340, 0.31);
 
-        regression_far.add(160, 1040, 0.07);
-        regression_far.add(160, 1100, 0.06);
+//        regression_far.add(147.5, 960, 0.085);
+        regression_far.add(147.5, 1240, 0.31);
+        regression_far.add(147.5, 1340, 0.31);
+
+//        regression_far.add(150, 980, 0.085);
+        regression_far.add(150, 1260, 0.31);
+        regression_far.add(150, 1360, 0.31);
+
+//        regression_far.add(152.5, 980, 0.085);
+        regression_far.add(152.5, 1260, 0.31);
+        regression_far.add(152.5, 1360, 0.31);
+
+//        regression_far.add(155, 1000, 0.085);
+        regression_far.add(155, 1280, 0.31);
+        regression_far.add(155, 1380, 0.31);
+
+//        regression_far.add(157.5, 1000, 0.085);
+        regression_far.add(157.5, 1280, 0.31);
+        regression_far.add(157.5, 1380, 0.31);
+
+//        regression_far.add(160, 1020, 0.085);
+        regression_far.add(160, 1300, 0.31);
+        regression_far.add(160, 1400, 0.31);
 
         regression_far.create();
 
 
-        vel_lut_far.add(135, 1000);
-        vel_lut_far.add(140, 1020);
-        vel_lut_far.add(145, 1040);
-        vel_lut_far.add(150, 1060);
-        vel_lut_far.add(155, 1080);
-        vel_lut_far.add(160, 1100);
+        vel_lut_far.add(135, 1300);
+        vel_lut_far.add(137.5, 1300);
+        vel_lut_far.add(140, 1320);
+        vel_lut_far.add(142.5, 1320);
+        vel_lut_far.add(145, 1340);
+        vel_lut_far.add(147.5, 1340);
+        vel_lut_far.add(150, 1360);
+        vel_lut_far.add(152.5, 1360);
+        vel_lut_far.add(155, 1380);
+        vel_lut_far.add(157.5, 1380);
+        vel_lut_far.add(160, 1400);
 
         vel_lut_far.createLUT();
 
@@ -241,5 +269,6 @@ public class Shooter {
         sensors = new Sensors(hardwareMap);
         state = State.IDLE;
         target_velocity = target_stopped;
+        telemetryM.addData("vel raw ", target_velocity - motor_shooter.getVelocity());
     }
 }

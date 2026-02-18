@@ -18,17 +18,17 @@ import org.firstinspires.ftc.teamcode.StopC.Subsyst.Shooter;
 import org.firstinspires.ftc.teamcode.StopC.Utils.Globals;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
-@Autonomous(group = "FAR")
-public class RedFar extends OpMode {
+@Autonomous(group = "CLOSE")
+public class AutoLeaveRed extends OpMode {
     Shooter shooter;
     Intake intake;
     Sensors sensors;
     Turret turret;
-    public static Follower follower;
+    private Follower follower;
     private Timer pathTimer, opmodeTimer;
     private int pathState;
-    private final Pose startPose = new Pose(56, 8.8, Math.toRadians(90)).mirror();
-    private final Pose scorePose = new Pose(56, 12, Math.toRadians(180)).mirror();
+    private final Pose startPose = new Pose(129.4, 8.8, Math.toRadians(90));
+    private final Pose scorePose = new Pose(84.2, 131.1, Math.toRadians(90));
     private final Pose intakeCornerPose = new Pose(10, 8.4, Math.toRadians(180)).mirror();
     private final Pose intakeCornerPose2 = new Pose(10, 13, Math.toRadians(200)).mirror();
     private final Pose controlIntakeCornerPose2 = new Pose(18, 16, Math.toRadians(200)).mirror();
@@ -55,9 +55,8 @@ public class RedFar extends OpMode {
     public void autonomousPathUpdate() {
         switch (pathState) {
             case 0:
-                shooter.state = Shooter.State.IDLE;
                 follower.followPath(scorePreload);
-                setPathState(1);
+                setPathState(100);
                 break;
             case 1:
                 if(pathTimer.getElapsedTimeSeconds() > 3) {
@@ -111,9 +110,6 @@ public class RedFar extends OpMode {
         intake.update_intake(gamepad1);
         follower.update();
 
-        Globals.curr_x = follower.getPose().getX();
-        Globals.curr_y = follower.getPose().getY();
-        Globals.curr_heading = follower.getHeading();
 
         autonomousPathUpdate();
 

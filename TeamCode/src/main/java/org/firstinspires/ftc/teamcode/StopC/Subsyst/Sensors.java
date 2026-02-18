@@ -13,72 +13,44 @@ import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.MESSI.Utils.Globals;
 
 public class Sensors {
     DigitalChannel sensor_shooting, sensor_shooting_2;
-    AnalogInput main_kicker_wire;
+    AnalogInput shifter_a, turret_a;
     Limelight3A limelight;
-//    Limelight3A limelight;
     public GoBildaPinpointDriver pinpoint;
     Globals globals;
 
 
     //Shooter
-    public boolean checkForShooting() {return (!sensor_shooting.getState() || !sensor_shooting_2.getState()); }
+//    public boolean checkForShooting() {return (!sensor_shooting.getState() || !sensor_shooting_2.getState()); }
 
-    //Feeder
-    public double readMainKicker() {return main_kicker_wire.getVoltage();}
-    public boolean mainKickerRetracted() {return readMainKicker() <= 0.45;}
-    public boolean mainKickerUp() {return readMainKicker() >= 0.64;} //Apr\ ox
+    //Shifter
 
-    //Camera
-//x
+    public double readShifterAnalog() {return shifter_a.getVoltage();};
+    public boolean shifterInHang() {return readShifterAnalog() <= 2.8;};
+    public boolean shifterInIntake() {return readShifterAnalog() >= 2.9;};
 
-    public boolean onTarget() {
-        return Math.abs(Globals.heading_error) <= 0.051;
-    }
+    //Turret
 
-//    public double getTa() {
-////        LLResult result = limelight.getLatestResult();
-//
-//        if (result != null && result.isValid()) {
-//            return Math.round(result.getTa() * 100) / 100.0;
-//        }
-//        return 0;
-//    }
+    public double readTurretAnalog() {return turret_a.getVoltage();};
 
-//    public void setGoalBlue() {
-//        limelight.pipelineSwitch(0);
-//    }
-//
-//    public void setGoalRed() {
-//        limelight.pipelineSwitch(1);
-//    }
-//
-//    public void setCheckMotif() {
-//        limelight.pipelineSwitch(2);
-//    }
-//
-//    public boolean seeingTag() {
-//        LLResult result = limelight.getLatestResult();
-//
-//        return result != null && result.isValid();
-//    }
 
     public Sensors(HardwareMap hardwareMap) {
-        sensor_shooting = hardwareMap.get(DigitalChannel.class, "feed");
-        sensor_shooting_2 = hardwareMap.get(DigitalChannel.class, "feed2");
-        limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
-        main_kicker_wire = hardwareMap.get(AnalogInput.class, "main_w");
+//        sensor_shooting   = hardwareMap.get(DigitalChannel.class, "feed");
+//        sensor_shooting_2 = hardwareMap.get(DigitalChannel.class, "feed2");
+//        limelight         = hardwareMap.get(Limelight3A.class, "limelight");
+        pinpoint          = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
+        shifter_a         = hardwareMap.get(AnalogInput.class, "shifter_a");
+        turret_a          = hardwareMap.get(AnalogInput.class, "turret_a");
 
-//        limelight.setPollRateHz(100);   // 100 / s
-//        limelight.start();
-
-        sensor_shooting.setMode(DigitalChannel.Mode.INPUT);
-        sensor_shooting_2.setMode(DigitalChannel.Mode.INPUT);
-
+        pinpoint.setOffsets(-185.55388, -78.40065, DistanceUnit.MM);
+        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
+//        sensor_shooting.  setMode   (DigitalChannel.Mode.INPUT);
+//        sensor_shooting_2.setMode   (DigitalChannel.Mode.INPUT);
 
         globals = new Globals();
     }

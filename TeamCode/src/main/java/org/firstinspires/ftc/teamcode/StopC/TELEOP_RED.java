@@ -10,6 +10,8 @@ import java.util.List;
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.StopC.Subsyst.Intake;
 import org.firstinspires.ftc.teamcode.StopC.Subsyst.Sensors;
 import org.firstinspires.ftc.teamcode.StopC.Subsyst.Shooter;
@@ -20,9 +22,10 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 @TeleOp
 @Configurable
 public class TELEOP_RED extends LinearOpMode {
+//    public static Pose startingPose = new Pose(Globals.curr_x, Globals.curr_y, Globals.curr_heading);
     public static Pose startingPose = new Pose(9.2, 8.5, Math.toRadians(0));
 
-    Follower follower;
+    public static Follower follower;
     Shooter shooter;
     Intake intake;
     Sensors sensors;
@@ -38,7 +41,7 @@ public class TELEOP_RED extends LinearOpMode {
         timer = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
 
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(startingPose);
+        follower.setStartingPose(new Pose(sensors.pinpoint.getPosX(DistanceUnit.INCH), sensors.pinpoint.getPosY(DistanceUnit.INCH), sensors.pinpoint.getHeading(AngleUnit.RADIANS)));
         follower.startTeleopDrive();
         follower.update();
 
@@ -81,7 +84,7 @@ public class TELEOP_RED extends LinearOpMode {
                 hub.clearBulkCache();
             }
 
-            shooter.update_shooter(follower.getPose().getX(), follower.getPose().getY());
+            shooter.update_shooter(follower.getPose().getX(), follower.getPose().getY(), gamepad1);
             turret.update_turret(follower.getPose().getX(), follower.getPose().getY(), follower.getHeading());
             intake.update_intake(gamepad1);
 
@@ -110,10 +113,6 @@ public class TELEOP_RED extends LinearOpMode {
             // SHOOTER ----------------------------------------------------
 
             if(rightBumper && timer.milliseconds() > 250) {
-//                if(shooter.state == Shooter.State.STOPPED) {
-//                    Shooter.initial_release = true;
-//                    shooter.state = Shooter.State.IDLE;
-//                }
                 if(shooter.state == Shooter.State.IDLE)
                     shooter.state = Shooter.State.SHOOT;
                 else if(shooter.state == Shooter.State.SHOOT)
@@ -122,8 +121,9 @@ public class TELEOP_RED extends LinearOpMode {
                 timer.reset();
             }
 
-//            if(bPressed)
-//                shooter.state = Shooter.State.STOPPED;
+            if (bPressed || bPressed2) {
+                shooter.state = Shooter.State.IDLE;
+            }
 
             // INTAKE  ----------------------------------------------------
 
@@ -145,6 +145,12 @@ public class TELEOP_RED extends LinearOpMode {
                 timer.reset();
             }
 
+            if(dPadUp && timer.milliseconds() > 250) {
+                Globals.hanging = true;
+                intake.state = Intake.State.HANG;
+                shooter.state = Shooter.State.STOPPED;
+            }
+
             // TELEMETRY ----------------------------------------------------
 
 //            telemetry.addData("flywheel state running ", shooter.state == Shooter.State.STOPPED);
@@ -152,6 +158,7 @@ public class TELEOP_RED extends LinearOpMode {
             telemetry.addData("flywheel state idle ", shooter.state == Shooter.State.IDLE);
 //            telemetry.addData("sensor feed ", sensors.check_for_shooting());
             telemetry.addData("vel ", shooter.motor_shooter.getVelocity());
+
 //            telemetry.addData("kicker pos ", sensors.readKickerPos()); //0.0006
 //            telemetry.addData("pozitie servo ", shooter.servo_feeder.getPosition());
 //            telemetry.addData("rpm ", shooter.getRpm(shooter.motor_shooter.getVelocity()));
@@ -184,11 +191,15 @@ public class TELEOP_RED extends LinearOpMode {
             telemetry.addData("x", follower.getPose().getX());
             telemetry.addData("y", follower.getPose().getY());
             telemetry.addData("relative angle normalized ", Turret.relative_angle);
-            telemetry.addData("target pos ", Turret.target_position);
             telemetry.addData("distance from goal ", shooter.distance_from_goal);
             telemetry.addData("error ", Shooter.error);
-            telemetry.addData("ready to shoot ", sensors.checkForShooting());
+//            telemetry.addData("ready to shoot ", sensors.checkForShooting());
             telemetry.addData("desired ", Shooter.desired);
+            telemetry.addData("target pos ", Turret.target_position);
+            telemetry.addData("turret a ", sensors.readTurretAnalog());
+            telemetry.addData("globals x", Globals.curr_x);
+            telemetry.addData("globals y ", Globals.curr_y);
+            telemetry.addData("globals heading", Globals.curr_heading);
 //            telemetry.addData("increment ", Turret.increment2);
 //            telemetry.addData("in sorting ", sensors.check_in_sorting());
             //            telemetry.addData("heading ", follower.getHeading());

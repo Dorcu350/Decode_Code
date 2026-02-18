@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.StopC.Autonom;
 import static java.lang.Math.abs;
 
 import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.Path;
@@ -26,16 +27,17 @@ public class BlueFar extends OpMode {
     private Follower follower;
     private Timer pathTimer, opmodeTimer;
     private int pathState;
-    private final Pose startPose = new Pose(55.6, 10, Math.toRadians(90));
-    private final Pose scorePose = new Pose(57, 13, Math.toRadians(90));
-    private final Pose intakeCornerPose = new Pose(11.6, 13, Math.toRadians(190));
-    private final Pose intakeCornerPose2 = new Pose(11.8, 10, Math.toRadians(180));
-    private final Pose stepBackPose = new Pose(17.3, 14, Math.toRadians(190));
+    private final Pose startPose = new Pose(56, 8.8, Math.toRadians(90));
+    private final Pose scorePose = new Pose(56, 12, Math.toRadians(180));
+    private final Pose intakeCornerPose = new Pose(10, 8.4, Math.toRadians(180));
+    private final Pose intakeCornerPose2 = new Pose(10, 13, Math.toRadians(200));
+    private final Pose controlIntakeCornerPose2 = new Pose(18, 16, Math.toRadians(200));
+    private final Pose stepBackPose = new Pose(17, 8.5, Math.toRadians(180));
     private Path scorePreload, goIntake, stepBack, stepForward, scoreCorner;
 
     public void buildPaths() {
         scorePreload = new Path(new BezierLine(startPose, scorePose));
-        scorePreload.setConstantHeadingInterpolation(startPose.getHeading());
+        scorePreload.setLinearHeadingInterpolation(startPose.getHeading() ,scorePose.getHeading());
 
         goIntake = new Path(new BezierLine(scorePose, intakeCornerPose));
         goIntake.setConstantHeadingInterpolation(intakeCornerPose.getHeading());
@@ -43,7 +45,7 @@ public class BlueFar extends OpMode {
         stepBack = new Path(new BezierLine(intakeCornerPose, stepBackPose));
         stepBack.setLinearHeadingInterpolation(intakeCornerPose.getHeading(), stepBackPose.getHeading());
 
-        stepForward = new Path(new BezierLine(stepBackPose, intakeCornerPose2));
+        stepForward = new Path(new BezierCurve(stepBackPose, controlIntakeCornerPose2, intakeCornerPose2));
         stepForward.setLinearHeadingInterpolation(stepBackPose.getHeading() , intakeCornerPose2.getHeading());
 
         scoreCorner = new Path(new BezierLine(intakeCornerPose2, scorePose));
@@ -65,7 +67,7 @@ public class BlueFar extends OpMode {
                 break;
             case 2:
                 if(pathTimer.getElapsedTimeSeconds() > 2) {
-                    shooter.state = Shooter.State.STOPPED;
+                    shooter.state = Shooter.State.IDLE;
                     intake.state = Intake.State.INTAKE;
                     follower.followPath(goIntake);
                     setPathState(3);
@@ -85,7 +87,7 @@ public class BlueFar extends OpMode {
                 break;
             case 5:
                 if(pathTimer.getElapsedTimeSeconds() > 0.5) {
-                    intake.state = Intake.State.STOP;
+//                    intake.state = Intake.State.STOP;
                     shooter.state = Shooter.State.IDLE;
                     follower.followPath(scoreCorner);
                     setPathState(6);
@@ -93,6 +95,7 @@ public class BlueFar extends OpMode {
                 break;
             case 6:
                 if(pathTimer.getElapsedTimeSeconds() > 2.5) {
+                    intake.state = Intake.State.STOP;
                     shooter.state = Shooter.State.SHOOT;
                     setPathState(2);
                 }
@@ -103,7 +106,7 @@ public class BlueFar extends OpMode {
 
     @Override
     public void loop() {
-        shooter.update_shooter(follower.getPose().getX(), follower.getPose().getY());
+        shooter.update_shooter(follower.getPose().getX(), follower.getPose().getY(), gamepad1);
         turret.update_turret(follower.getPose().getX(), follower.getPose().getY(), follower.getHeading());
         intake.update_intake(gamepad1);
         follower.update();
@@ -117,7 +120,6 @@ public class BlueFar extends OpMode {
         telemetry.addData("heading", follower.getPose().getHeading());
         telemetry.addData("vel ", shooter.motor_shooter.getVelocity());
         telemetry.addData(" error val ", Shooter.error);
-        telemetry.addData("on target ", sensors.onTarget());
         telemetry.update();
     }
 

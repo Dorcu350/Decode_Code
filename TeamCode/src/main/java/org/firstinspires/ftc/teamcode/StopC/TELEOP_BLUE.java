@@ -20,7 +20,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 @TeleOp
 @Configurable
 public class TELEOP_BLUE extends LinearOpMode {
-    public static Pose startingPose = new Pose(135, 8.5, Math.toRadians(180));
+    public static Pose startingPose = new Pose(135, 8.5, Math.toRadians(0));
 
     Follower follower;
     Shooter shooter;
@@ -84,7 +84,7 @@ public class TELEOP_BLUE extends LinearOpMode {
                 hub.clearBulkCache();
             }
 
-            shooter.update_shooter(follower.getPose().getX(), follower.getPose().getY());
+            shooter.update_shooter(follower.getPose().getX(), follower.getPose().getY(), gamepad1);
             turret.update_turret(follower.getPose().getX(), follower.getPose().getY(), follower.getHeading());
             intake.update_intake(gamepad1);
 
@@ -127,10 +127,6 @@ public class TELEOP_BLUE extends LinearOpMode {
             // SHOOTER ----------------------------------------------------
 
             if(rightBumper && timer.milliseconds() > 250) {
-//                if(shooter.state == Shooter.State.STOPPED) {
-//                    Shooter.initial_release = true;
-//                    shooter.state = Shooter.State.IDLE;
-//                }
                 if(shooter.state == Shooter.State.IDLE)
                     shooter.state = Shooter.State.SHOOT;
                 else if(shooter.state == Shooter.State.SHOOT || shooter.state == Shooter.State.STOPPED)
@@ -139,8 +135,8 @@ public class TELEOP_BLUE extends LinearOpMode {
                 timer.reset();
             }
 
-//            if(bPressed)
-//                shooter.state = Shooter.State.STOPPED;
+            if(bPressed || bPressed2)
+                shooter.state = Shooter.State.IDLE;
 
             // INTAKE  ----------------------------------------------------
 
@@ -162,6 +158,11 @@ public class TELEOP_BLUE extends LinearOpMode {
                 timer.reset();
             }
 
+            if(dPadUp && timer.milliseconds() > 250) {
+                intake.state = Intake.State.HANG;
+                shooter.state = Shooter.State.STOPPED;
+            }
+
             // TELEMETRY ----------------------------------------------------
 
 //            telemetry.addData("flywheel state running ", shooter.state == Shooter.State.STOPPED);
@@ -172,6 +173,8 @@ public class TELEOP_BLUE extends LinearOpMode {
 //            telemetry.addData("kicker pos ", sensors.readKickerPos()); //0.0006
 //            telemetry.addData("pozitie servo ", shooter.servo_feeder.getPosition());
             telemetry.addData("rpm ", shooter.getRpm(shooter.motor_shooter.getVelocity()));
+            telemetry.addData("shifter pos ", sensors.readShifterAnalog());
+            telemetry.addData("shifter servo pos ", intake.servo_shifter.getPosition());
 //            telemetry.addData("tA ", sensors.getTa());
 //            telemetry.addData("timer ", intake.timer.milliseconds());
 //            telemetry.addData("tx ", sensors.getTx());
@@ -204,7 +207,7 @@ public class TELEOP_BLUE extends LinearOpMode {
             telemetry.addData("target pos ", Turret.target_position);
             telemetry.addData("distance from goal ", shooter.distance_from_goal);
             telemetry.addData("error ", Shooter.error);
-            telemetry.addData("ready to shoot ", sensors.checkForShooting());
+//            telemetry.addData("ready to shoot ", sensors.checkForShooting());
 //            telemetry.addData("increment ", Turret.increment2);
 //            telemetry.addData("in sorting ", sensors.check_in_sorting());
 //            telemetry.addData("heading ", follower.getHeading());
