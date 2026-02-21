@@ -22,7 +22,7 @@ public class Constants {
             .headingPIDFCoefficients(new PIDFCoefficients(-1, 0.0, 0.008, 0.02))
             .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.008, 0.0, 0.002, 0.6, 0.03))
             .centripetalScaling(0.0005)
-            .mass(12);
+            .mass(14);
 
     public static MecanumConstants driveConstants = new MecanumConstants()
             .maxPower(1)

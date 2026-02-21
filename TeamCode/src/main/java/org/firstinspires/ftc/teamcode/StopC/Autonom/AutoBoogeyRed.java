@@ -18,8 +18,8 @@ import org.firstinspires.ftc.teamcode.StopC.Subsyst.Shooter;
 import org.firstinspires.ftc.teamcode.StopC.Utils.Globals;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
-@Autonomous(group = "FAR")
-public class RedFar extends OpMode {
+@Autonomous(group = "Boogey")
+public class AutoBoogeyRed extends OpMode {
     Shooter shooter;
     Intake intake;
     Sensors sensors;
@@ -76,7 +76,7 @@ public class RedFar extends OpMode {
             case 1:
                 if(pathTimer.getElapsedTimeSeconds() > 2) {
                     shooter.state = Shooter.State.SHOOT;
-                    setPathState(6);
+                    setPathState(2);
                 }
                 break;
             case 2:
@@ -192,46 +192,12 @@ public class RedFar extends OpMode {
                     setPathState(20);
                 }
                 break;
-            case 20:
-                if(pathTimer.getElapsedTimeSeconds() > 1) {
-                    follower.followPath(scoreCorner);
-                    setPathState(21);
-                }
-                break;
-            case 21:
-                if(pathTimer.getElapsedTimeSeconds() > 2.5) {
-                    intake.state = Intake.State.STOP;
-                    shooter.state = Shooter.State.SHOOT;
-                    setPathState(22);
-                }
-                break;
-            case 22:
-                if(pathTimer.getElapsedTimeSeconds() > 2) {
-                    shooter.state = Shooter.State.IDLE;
-                    intake.state = Intake.State.INTAKE;
-                    follower.followPath(goIntake);
-                    setPathState(23);
-                }
-                break;
-            case 24:
-                if(pathTimer.getElapsedTimeSeconds() > 1.5) {
-                    follower.followPath(stepBack);
-                    setPathState(24);
-                }
-                break;
-            case 25:
-                if(pathTimer.getElapsedTimeSeconds() > 0.5) {
-                    follower.followPath(stepForward);
-                    shooter.state = Shooter.State.FORCE_STOP;
-                    setPathState(26);
-                }
-                break;
-            case 26:
-                if(pathTimer.getElapsedTimeSeconds() > 1) {
-                    shooter.state = Shooter.State.STOPPED;
-                    setPathState(27);
-                }
-                break;
+//            case 20:
+//                if(pathTimer.getElapsedTimeSeconds() > 1) {
+//                    follower.followPath(scoreCorner);
+//                    setPathState(21);
+//                }
+//                break;
 
         }
     }
@@ -267,7 +233,7 @@ public class RedFar extends OpMode {
         opmodeTimer = new Timer();
         opmodeTimer.resetTimer();
 
-        Globals.alliance = Globals.ALLIANCE.RED;
+        Globals.alliance = Globals.ALLIANCE.BLUE;
         Globals.faze = Globals.FAZE.AUTO;
 
         follower = Constants.createFollower(hardwareMap);

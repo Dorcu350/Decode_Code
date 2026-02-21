@@ -74,8 +74,8 @@ public class TELEOP_RED extends LinearOpMode {
             boolean leftBumper2 = gamepad2.left_bumper;
             boolean rightBumper2 = gamepad2.right_bumper;
             boolean aPressed2 = gamepad2.a;
-            boolean bPressed2 = gamepad2.b;
             boolean yPressed2 = gamepad2.y;
+            boolean xPressed2 = gamepad2.x;
 
 
             //FUNCTII UPDATE ----------------------------------------------------
@@ -107,8 +107,28 @@ public class TELEOP_RED extends LinearOpMode {
             if(dPadLeft && timer.milliseconds() > 250)
                 follower.setPose(startingPose);
 
+            if(rightBumper2 && timer.milliseconds() > 250) {
+                Turret.offset += 0.001;
+                timer.reset();
+            }
+
+            if(leftBumper2 && timer.milliseconds() > 250) {
+                Turret.offset -= 0.001;
+                timer.reset();
+            }
+
             if(aPressed2)
                 intake.state = Intake.State.FORCE_REVERSE;
+
+            if(xPressed2 && timer.milliseconds() > 250) {
+                Shooter.offset -= 20;
+                timer.reset();
+            }
+
+            if(yPressed2 && timer.milliseconds() > 250) {
+                Shooter.offset += 20;
+                timer.reset();
+            }
 
             // SHOOTER ----------------------------------------------------
 
@@ -121,7 +141,7 @@ public class TELEOP_RED extends LinearOpMode {
                 timer.reset();
             }
 
-            if (bPressed || bPressed2) {
+            if (bPressed) {
                 shooter.state = Shooter.State.IDLE;
             }
 
@@ -158,7 +178,7 @@ public class TELEOP_RED extends LinearOpMode {
             telemetry.addData("flywheel state idle ", shooter.state == Shooter.State.IDLE);
 //            telemetry.addData("sensor feed ", sensors.check_for_shooting());
             telemetry.addData("vel ", shooter.motor_shooter.getVelocity());
-
+            telemetry.addData("tur off ", Turret.offset);
 //            telemetry.addData("kicker pos ", sensors.readKickerPos()); //0.0006
 //            telemetry.addData("pozitie servo ", shooter.servo_feeder.getPosition());
 //            telemetry.addData("rpm ", shooter.getRpm(shooter.motor_shooter.getVelocity()));

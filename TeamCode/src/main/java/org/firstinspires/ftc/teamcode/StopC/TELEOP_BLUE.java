@@ -10,6 +10,8 @@ import java.util.List;
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.StopC.Subsyst.Intake;
 import org.firstinspires.ftc.teamcode.StopC.Subsyst.Sensors;
 import org.firstinspires.ftc.teamcode.StopC.Subsyst.Shooter;
@@ -39,7 +41,7 @@ public class TELEOP_BLUE extends LinearOpMode {
         timer = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
 
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(startingPose);
+        follower.setStartingPose(new Pose(sensors.pinpoint.getPosX(DistanceUnit.INCH), sensors.pinpoint.getPosY(DistanceUnit.INCH), sensors.pinpoint.getHeading(AngleUnit.RADIANS)));
         follower.startTeleopDrive();
         follower.update();
 
@@ -74,9 +76,8 @@ public class TELEOP_BLUE extends LinearOpMode {
             boolean leftBumper2 = gamepad2.left_bumper;
             boolean rightBumper2 = gamepad2.right_bumper;
             boolean aPressed2 = gamepad2.a;
-            boolean bPressed2 = gamepad2.b;
+            boolean xPressed2 = gamepad2.x;
             boolean yPressed2 = gamepad2.y;
-
 
             //FUNCTII UPDATE ----------------------------------------------------
 
@@ -107,21 +108,28 @@ public class TELEOP_BLUE extends LinearOpMode {
             if(dPadLeft && timer.milliseconds() > 250)
                 follower.setPose(startingPose);
 
-//            if(rightBumper2 && timer.milliseconds() > 250)
-//                follower.setPose(startingPose2);
+            if(rightBumper2 && timer.milliseconds() > 250) {
+                Turret.offset += 0.001;
+                timer.reset();
+            }
 
-//            if(dPadUp && timer.milliseconds() > 250) {
-//                Turret.increment2++;
-//                timer.reset();
-//            }
-//
-//            if(dPadLeft && timer.milliseconds() > 250) {
-//                Turret.increment2--;
-//                timer.reset();
-//            }
+            if(leftBumper2 && timer.milliseconds() > 250) {
+                Turret.offset -= 0.001;
+                timer.reset();
+            }
 
             if(aPressed2)
                 intake.state = Intake.State.FORCE_REVERSE;
+
+            if(xPressed2 && timer.milliseconds() > 250) {
+                Shooter.offset -= 20;
+                timer.reset();
+            }
+
+            if(yPressed2 && timer.milliseconds() > 250) {
+                Shooter.offset += 20;
+                timer.reset();
+            }
 
 
             // SHOOTER ----------------------------------------------------
@@ -135,7 +143,7 @@ public class TELEOP_BLUE extends LinearOpMode {
                 timer.reset();
             }
 
-            if(bPressed || bPressed2)
+            if(bPressed)
                 shooter.state = Shooter.State.IDLE;
 
             // INTAKE  ----------------------------------------------------
@@ -159,6 +167,7 @@ public class TELEOP_BLUE extends LinearOpMode {
             }
 
             if(dPadUp && timer.milliseconds() > 250) {
+                Globals.hanging = true;
                 intake.state = Intake.State.HANG;
                 shooter.state = Shooter.State.STOPPED;
             }

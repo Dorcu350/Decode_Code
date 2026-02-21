@@ -23,8 +23,8 @@ public class Intake {
     final TelemetryManager telemetryM;
     public CachingDcMotorEx motor_intake;
     public CachingServo servo_shifter;
-    public static double shifter_intake = 0.07, shifter_hang = 0.13;
-    public static int target_hang = 200;
+    public static double shifter_intake = 0.07, shifter_hang = 0.13, kP = 0.1, kF = 0.1;
+    public static int target_hang = 800;
     VoltageSensor voltageSensor;
     Sensors sensors;
     public enum State {
@@ -58,15 +58,17 @@ public class Intake {
                 if(sensors.shifterInHang()) {
                     motor_intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                     motor_intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                    motor_intake.setTargetPosition(0);
-                    motor_intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-                    motor_intake.setTargetPosition(target_hang);
-                    motor_intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    motor_intake.setPower(1);
+//                    motor_intake.setTargetPosition(0);
+//                    motor_intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//
+//                    motor_intake.setTargetPosition(target_hang);
+//                    motor_intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//                    motor_intake.setPower(1);
+                    double error = target_hang - motor_intake.getCurrentPosition();
+                    motor_intake.setPower((kP * error ) + kF);
                 }
                 else
-                    motor_intake.setPower(0.1);
+                    motor_intake.setPower(0.5);
                 break;
         }
     }

@@ -34,26 +34,30 @@ public class Turret {
     final TelemetryManager telemetryM;
     Sensors sensors;
     public CachingServo servo_left, servo_right;
-    public static double position_test = 0.505, target_angle, relative_angle, target_position, error, position_hang = 0.93;
+    public static double position_test = 0.505, target_angle, relative_angle, target_position, error, position_hang = 0.1, deadband = 0.0015, lastPos, offset = 0;
     public final double min_poz = 0.9183, max_poz = 0.0916, min_angle = -120, max_angle = 120;
-    public static double x_goal_blue = 0, y_goal_blue = 144, x_goal_red = 144, y_goal_red = 144;
-    public static double x_goal_blue_auto = 10, x_goal_red_auto = 134;
+    public static double x_goal_blue = 2, y_goal_blue = 144, x_goal_red = 144, y_goal_red = 146;
+    public static double x_goal_blue_auto = 10, x_goal_red_auto = 134; //10 //134
+    public static double shooterWorldX, shooterWorldY, shooterOffset = -2.057;
 
     public void update_turret(double x, double y, double heading) {
+        shooterWorldX = x + (shooterOffset * Math.cos(heading));
+        shooterWorldY = y + (shooterOffset * Math.sin(heading));
+
         if(Globals.faze == Globals.FAZE.TELEOP) {
             if (Globals.alliance == Globals.ALLIANCE.BLUE)
-                target_angle = Math.atan2(y_goal_blue - y, x_goal_blue - x);
+                target_angle = Math.atan2(y_goal_blue - shooterWorldY, x_goal_blue - shooterWorldX);
             else
-                target_angle = Math.atan2(y_goal_red - y, x_goal_red - x);
+                target_angle = Math.atan2(y_goal_red - shooterWorldY, x_goal_red - shooterWorldX);
         }else {
             if (Globals.alliance == Globals.ALLIANCE.BLUE)
-                target_angle = Math.atan2(y_goal_blue - y, x_goal_blue_auto - x);
+                target_angle = Math.atan2(y_goal_blue - shooterWorldY, x_goal_blue_auto - shooterWorldX);
             else
-                target_angle = Math.atan2(y_goal_red - y, x_goal_red_auto - x);
+                target_angle = Math.atan2(y_goal_red - shooterWorldY, x_goal_red_auto - shooterWorldX);
         }
 
         target_angle = AngleUnit.normalizeRadians(target_angle);
-        heading =  AngleUnit.normalizeRadians(heading);
+        heading = AngleUnit.normalizeRadians(heading);
 
         relative_angle = Math.toDegrees(target_angle - heading);
         relative_angle = AngleUnit.normalizeDegrees(relative_angle);
@@ -61,8 +65,18 @@ public class Turret {
         relative_angle = Math.max(min_angle, Math.min(max_angle, relative_angle));
         target_position = Range.scale(relative_angle, min_angle, max_angle, min_poz, max_poz);
 
+//        if(!Globals.hanging) {
+//            if(!Globals.start_feeding) {
+//                moveTo(target_position + offset);
+//            }else if(Math.abs(position_hang - lastPos) > deadband){
+//                moveTo(target_position);
+//                lastPos = position_hang;
+//            }
+//        }else
+//            moveTo(position_hang);
+
         if(!Globals.hanging)
-            moveTo(target_position);
+            moveTo(target_position + offset);
         else
             moveTo(position_hang);
     }
