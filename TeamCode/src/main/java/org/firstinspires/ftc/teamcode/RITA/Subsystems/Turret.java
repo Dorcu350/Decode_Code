@@ -23,7 +23,7 @@ public class Turret {
 
     public static double position_test = 0.497, target_angle, relative_angle, target_position, error, position_hang = 0.1, offset = 0;
     public final double MIN_POS = 0.097, MAX_POS = 0.897, MIN_ANGLE = -120, MAX_ANGLE = 120;
-    public static double X_GOAL_BLUE = 4, Y_GOAL_BLUE = 144, X_GOAL_RED = 148, Y_GOAL_RED = 144;
+    public static double X_GOAL_BLUE = 0, Y_GOAL_BLUE = 144, X_GOAL_RED = 144, Y_GOAL_RED = 144;
     public static double X_GOAL_BLUE_AUTO = 10, X_GOAL_RED_AUTO = 148;
     public static double shooterWorldX, shooterWorldY, shooterOffset = -1.377;
 
@@ -56,7 +56,7 @@ public class Turret {
             moveTo(target_position + offset);
         else
             moveTo(position_hang);
-     }
+    }
     public void moveTo(double target) {
         servo_left.setPosition(target);
         servo_right.setPosition(target);

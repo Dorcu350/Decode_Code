@@ -12,19 +12,21 @@ import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.RITA.Utils.Globals;
 
+import dev.frozenmilk.dairy.cachinghardware.CachingServo;
+
 public class Sensors {
     DigitalChannel sensor_third, sensor_second, sensor_first;
-    AnalogInput shifter_a;
+    AnalogInput shifter_a, stopper_a;
     Limelight3A limelight;
     public GoBildaPinpointDriver pinpoint;
     Globals globals;
 
-
-     //Transfer
+    // Transfer
     public boolean readFirst() {
         return (!sensor_first.getState());
     }
@@ -48,11 +50,17 @@ public class Sensors {
             Globals.third_ball = true;
     }
 
-    //Shifter
+    // Shifter
 
     public double readShifterAnalog() {return shifter_a.getVoltage();};
     public boolean shifterInHang() {return readShifterAnalog() <= 2.8;};
     public boolean shifterInIntake() {return readShifterAnalog() >= 2.9;};
+
+    // Shooter
+
+    public double readStopperAnalog() {return stopper_a.getVoltage();};
+
+    public boolean stopperOpen() {return readStopperAnalog() <= 1.45;};
 
     //Turret
 
@@ -65,6 +73,7 @@ public class Sensors {
         sensor_third      = hardwareMap.get(DigitalChannel.class, "feed3");
         pinpoint          = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
         shifter_a         = hardwareMap.get(AnalogInput.class, "shifter_a");
+        stopper_a         = hardwareMap.get(AnalogInput.class, "stopper_a");
 //        limelight         = hardwareMap.get(Limelight3A.class, "limelight");
 
 

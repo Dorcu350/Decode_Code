@@ -11,6 +11,7 @@ import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.RITA.Subsystems.Intake;
 import org.firstinspires.ftc.teamcode.RITA.Subsystems.Sensors;
@@ -22,7 +23,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 @TeleOp
 @Configurable
 public class TELEOP_RED extends LinearOpMode {
-    public static Pose startingPose = new Pose(9.2, 8.5, Math.toRadians(0));
+    public static Pose startingPose = new Pose(9, 8.5, Math.toRadians(0));
 
     public static Follower follower;
     Shooter shooter;
@@ -170,6 +171,11 @@ public class TELEOP_RED extends LinearOpMode {
                 shooter.state = Shooter.State.STOPPED;
             }
 
+            if(gamepad1.a) {
+                Globals.force_drop = true;
+            }else
+                Globals.force_drop = false;
+
             // TELEMETRY ----------------------------------------------------
 
 //            telemetry.addData("flywheel state running ", shooter.state == Shooter.State.STOPPED);
@@ -177,6 +183,7 @@ public class TELEOP_RED extends LinearOpMode {
 //            telemetry.addData("flywheel state idle ", shooter.state == Shooter.State.IDLE);
 //            telemetry.addData("sensor feed ", sensors.check_for_shooting());
             telemetry.addData("vel ", shooter.motor_shooter.getVelocity());
+            telemetry.addData(" error val ", Shooter.error);
 //            telemetry.addData("tur off ", Turret.offset);
 //            telemetry.addData("kicker pos ", sensors.readKickerPos()); //0.0006
 //            telemetry.addData("pozitie servo ", shooter.servo_feeder.getPosition());
@@ -186,13 +193,14 @@ public class TELEOP_RED extends LinearOpMode {
 //            telemetry.addData("tx ", sensors.getTx());
 //            telemetry.addData("is kicker down ", sensors.kickerRetracted());
 //            telemetry.addData("error ", shooter.noError(Shooter.error));
-//            telemetry.addData("target vel ", Shooter.target_velocity);
+            telemetry.addData("target vel ", Shooter.TARGET_VELOCITY);
 //            telemetry.addData("heading ", follower.getHeading());
 //            telemetry.addData(" error val ", Shooter.error);
 //            telemetry.addData("hang poz ", hang.motor_hang.getCurrentPosition());xx
 //            telemetry.addData("current ", shooter.motor_shooter.getCurrent(CurrentUnit.MILLIAMPS));
 //            telemetry.addData("current intake ", intake.motor_intake.getCurrent(CurrentUnit.MILLIAMPS));
             telemetry.addData("loop times ", loops.milliseconds());
+            telemetry.addData(" error val ", Shooter.error);
 //            telemetry.addData("zone ", shooter.zone.getClosest(Shooter.lastValue));
 //            telemetry.addData("globals heading error ", Globals.heading_error);
 //            telemetry.addData("has shot ", Shooter.has_shot);
@@ -210,7 +218,11 @@ public class TELEOP_RED extends LinearOpMode {
             telemetry.addData("x", follower.getPose().getX());
             telemetry.addData("y", follower.getPose().getY());
             telemetry.addData("relative angle normalized ", Turret.relative_angle);
-//            telemetry.addData("distance from goal ", shooter.distance_from_goal);
+            telemetry.addData("stopper open ", sensors.stopperOpen());
+            telemetry.addData("max rpm ", Shooter.max_rpm);
+            telemetry.addData("distance from goal ", shooter.distance_from_goal);
+            telemetry.addData("target ", Shooter.TARGET_TEST);
+            telemetry.addData("pow ", shooter.motor_shooter.getPower());
 //            telemetry.addData("error ", Shooter.error);
 //            telemetry.addData("ready to shoot ", sensors.checkForShooting());
 //            telemetry.addData("desired ", Shooter.desired);
@@ -237,7 +249,8 @@ public class TELEOP_RED extends LinearOpMode {
 //            telemetry.addData("first ", intake.firstBall);
 //            telemetry.addData("second ", intake.secondBall);
 //            telemetry.addData("hue ", sensors.showHue());
-
+            telemetry.addData("vol shooter" , shooter.motor_shooter.getCurrent(CurrentUnit.AMPS));
+            telemetry.addData("transfer speed ", Intake.RATIO_SCALE);
             telemetry.update();
         }
     }

@@ -1,8 +1,10 @@
 package org.firstinspires.ftc.teamcode.RITA.Subsystems;
 
+import com.arcrobotics.ftclib.util.InterpLUT;
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
+import com.pedropathing.math.MathFunctions;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -11,9 +13,12 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.RITA.Utils.Globals;
+
+import java.util.concurrent.TimeUnit;
 
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
 import dev.frozenmilk.dairy.cachinghardware.CachingServo;
@@ -23,11 +28,12 @@ public class Intake {
     final TelemetryManager telemetryM;
     public CachingDcMotorEx motor_intake, motor_index;
     public CachingServo servo_shifter, servo_drop;
-    public static double INTAKE_SHIFT_POS = 0.07, HANG_SHIFT_POS = 0.13, DROP_DOWN_POS = 0.6, DROP_UP_POS = 0.8;
-    public static double kP = 0.1, kF = 0.1;
+    public static double INTAKE_SHIFT_POS = 0.07, HANG_SHIFT_POS = 0.13, DROP_DOWN_POS = 0.42 , DROP_UP_POS = 0.39, RATIO_TRANSFER = 1, RATIO_INTAKE = 1, RATIO_SCALE;
+    public static double kP = 0.1, kF = 0.1, nominal_voltage = 12.0;
     public static int TARGET_HANG = 800;
     VoltageSensor voltageSensor;
     Sensors sensors;
+    InterpLUT transfer_speed = new InterpLUT();
     public enum State {
         INTAKE,
         STOP,
@@ -37,24 +43,24 @@ public class Intake {
     }
     public State state;
     public void update_intake(Gamepad gamepad) {
-        if(Globals.start_transfer)
-            state = State.TRANSFER;
+        if(Globals.force_drop)
+            lower_intake();
         switch(state) {
             case STOP:
-
                 shift_intake();
-                raise_intake();
+                if(!Globals.force_drop)
+                    raise_intake();
                 motor_intake.setPower(0);
                 motor_index.setPower(0);
+
+                if(Globals.start_transfer)
+                    state = State.TRANSFER;
 
                 break;
 
             case INTAKE:
-
                 shift_intake();
                 sensors.checkFullTransfer();
-                motor_intake.setPower(1);
-
                 if(!Globals.first_ball)
                     motor_index.setPower(1);
                 else
@@ -62,18 +68,28 @@ public class Intake {
 
                 if(Globals.third_ball) {
                     gamepad.rumble(250);
-                    raise_intake();
-                } else
+                    motor_intake.setPower(0.3);
+                    if(!Globals.force_drop)
+                        raise_intake();
+                } else {
                     lower_intake();
+                    motor_intake.setPower(1);
+                }
+
+                if(Globals.start_transfer)
+                    state = State.TRANSFER;
+
 
                 break;
 
             case TRANSFER:
-
                 shift_intake();
                 lower_intake();
-                motor_intake.setPower(1);
-                motor_index.setPower(1);
+                if(Globals.distance_goal >= 60 && Globals.distance_goal <= 200) {
+                    RATIO_SCALE = transfer_speed.get(Globals.distance_goal);
+                    motor_intake.setPower(RATIO_SCALE);
+                    motor_index.setPower(RATIO_SCALE);
+                }
 
                 if(!Globals.start_transfer)
                     state = State.INTAKE;
@@ -81,15 +97,17 @@ public class Intake {
                 break;
 
             case FORCE_REVERSE:
-
                 shift_intake();
                 lower_intake();
-                motor_intake.setPower(-1);
+                motor_intake.setPower(-0.4);
+
+                if(Globals.start_transfer)
+                    state = State.TRANSFER;
+
 
                 break;
 
             case HANG:
-
                 shift_hang();
                 if(sensors.shifterInHang()) {
                     motor_intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -132,6 +150,14 @@ public class Intake {
 
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
 
+        transfer_speed.add(65, 1);
+        transfer_speed.add(115, 1);
+        transfer_speed.add(135, 0.8);
+        transfer_speed.add(200, 0.8);
+
+        transfer_speed.createLUT();
+
+
         shift_intake();
 
         state = State.STOP;
@@ -139,4 +165,6 @@ public class Intake {
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
         sensors = new Sensors(hardwareMap);
     }
+
+
 }

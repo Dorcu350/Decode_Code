@@ -8,9 +8,11 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import java.util.List;
 import com.bylazar.configurables.annotations.Configurable;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.RITA.Subsystems.Intake;
 import org.firstinspires.ftc.teamcode.RITA.Subsystems.Sensors;
@@ -22,8 +24,8 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 @TeleOp
 @Configurable
 public class TELEOP_BLUE extends LinearOpMode {
-    public static Pose startingPose = new Pose(135, 8.5, Math.toRadians(180));
-
+    public static Pose startingPose = new Pose(135.2, 8.3, Math.toRadians(180));
+    DcMotorEx leftFront,rightFront,rightRear,leftRear;
     Follower follower;
     Shooter shooter;
     Intake intake;
@@ -179,6 +181,7 @@ public class TELEOP_BLUE extends LinearOpMode {
 //            telemetry.addData("flywheel state idle ", shooter.state == Shooter.State.IDLE);
 //            telemetry.addData("sensor feed ", sensors.check_for_shooting());
             telemetry.addData("vel ", shooter.motor_shooter.getVelocity());
+            telemetry.addData("analog stopper ", sensors.readStopperAnalog());
 //            telemetry.addData("kicker pos ", sensors.readKickerPos()); //0.0006
 //            telemetry.addData("pozitie servo ", shooter.servo_feeder.getPosition());
             telemetry.addData("rpm ", shooter.getRpm(shooter.motor_shooter.getVelocity()));
@@ -191,7 +194,7 @@ public class TELEOP_BLUE extends LinearOpMode {
 //            telemetry.addData("error ", shooter.noError(Shooter.error));
 //            telemetry.addData("target vel ", Shooter.target_velocity);
 //            telemetry.addData("heading ", follower.getHeading());
-//            telemetry.addData(" error val ", Shooter.error);
+            telemetry.addData(" error val ", Shooter.error);
 //            telemetry.addData("hang poz ", hang.motor_hang.getCurrentPosition());xx
 //            telemetry.addData("current ", shooter.motor_shooter.getCurrent(CurrentUnit.MILLIAMPS));
 //            telemetry.addData("current intake ", intake.motor_intake.getCurrent(CurrentUnit.MILLIAMPS));
@@ -216,6 +219,7 @@ public class TELEOP_BLUE extends LinearOpMode {
             telemetry.addData("x", follower.getPose().getX());
             telemetry.addData("y", follower.getPose().getY());
             telemetry.addData("relative angle normalized ", Turret.relative_angle);
+
 //            telemetry.addData("target pos ", Turret.target_position);
 //            telemetry.addData("distance from goal ", shooter.distance_from_goal);
 //            telemetry.addData("error ", Shooter.error);
@@ -239,6 +243,9 @@ public class TELEOP_BLUE extends LinearOpMode {
 //            telemetry.addData("second ", intake.secondBall);
 //            telemetry.addData("hue ", sensors.showHue());
 //            telemetry.addData("TurretCurrentPos", turret.getPosition());
+//            telemetry.addData("motor drive")
+
+            telemetry.addData("transfer speed ", Intake.RATIO_SCALE);
             telemetry.update();
         }
     }
