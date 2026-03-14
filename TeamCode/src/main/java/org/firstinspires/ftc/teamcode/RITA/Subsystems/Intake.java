@@ -26,10 +26,11 @@ import dev.frozenmilk.dairy.cachinghardware.CachingServo;
 @Configurable
 public class Intake {
     final TelemetryManager telemetryM;
+
     public CachingDcMotorEx motor_intake, motor_index;
     public CachingServo servo_shifter, servo_drop;
-    public static double INTAKE_SHIFT_POS = 0.07, HANG_SHIFT_POS = 0.13, DROP_DOWN_POS = 0.42 , DROP_UP_POS = 0.39, RATIO_TRANSFER = 1, RATIO_INTAKE = 1, RATIO_SCALE;
-    public static double kP = 0.1, kF = 0.1, nominal_voltage = 12.0;
+    public static double INTAKE_SHIFT_POS = 0.03, HANG_SHIFT_POS = 0.09, DROP_DOWN_POS = 0.42 , DROP_UP_POS = 0.39, RATIO_SCALE, DROP_DOWN_POS_FORCE = 0.44;
+    public static double kP = 0.1, kF = 0.1;
     public static int TARGET_HANG = 800;
     VoltageSensor voltageSensor;
     Sensors sensors;
@@ -44,7 +45,7 @@ public class Intake {
     public State state;
     public void update_intake(Gamepad gamepad) {
         if(Globals.force_drop)
-            lower_intake();
+            lower_intake_force();
         switch(state) {
             case STOP:
                 shift_intake();
@@ -68,17 +69,17 @@ public class Intake {
 
                 if(Globals.third_ball) {
                     gamepad.rumble(250);
-                    motor_intake.setPower(0.3);
+                    motor_intake.setPower(0);
                     if(!Globals.force_drop)
                         raise_intake();
                 } else {
-                    lower_intake();
+                    if(!Globals.force_drop)
+                        lower_intake();
                     motor_intake.setPower(1);
                 }
 
                 if(Globals.start_transfer)
                     state = State.TRANSFER;
-
 
                 break;
 
@@ -113,10 +114,10 @@ public class Intake {
                     motor_intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                     motor_intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     double error = TARGET_HANG - motor_intake.getCurrentPosition();
-                    motor_intake.setPower((kP * error ) + kF);
+                    motor_intake.setPower(-((kP * error ) + kF));
                 }
                 else
-                    motor_intake.setPower(0.5);
+                    motor_intake.setPower(-0.5);
 
                 break;
         }
@@ -129,6 +130,9 @@ public class Intake {
     }
     public void lower_intake() {
         servo_drop.setPosition(DROP_DOWN_POS);
+    }
+    public void lower_intake_force() {
+        servo_drop.setPosition(DROP_DOWN_POS_FORCE);
     }
     public void raise_intake() {
         servo_drop.setPosition(DROP_UP_POS);
@@ -150,13 +154,12 @@ public class Intake {
 
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
 
-        transfer_speed.add(65, 1);
+        transfer_speed.add(60, 1);
         transfer_speed.add(115, 1);
-        transfer_speed.add(135, 0.8);
-        transfer_speed.add(200, 0.8);
+        transfer_speed.add(135, 0.65);
+        transfer_speed.add(200, 0.65);
 
         transfer_speed.createLUT();
-
 
         shift_intake();
 

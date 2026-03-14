@@ -98,9 +98,9 @@ public class TELEOP_BLUE extends LinearOpMode {
             double turning = (gamepad1.left_trigger - gamepad1.right_trigger) * Math.abs((gamepad1.left_trigger - gamepad1.right_trigger));
 
             follower.setTeleOpDrive(
-                    gamepad1.left_stick_y,
-                    gamepad1.left_stick_x * 1.1,
-                    -turning, // (gamepad1.left_trigger - gamepad1.right_trigger)
+                    -gamepad1.left_stick_y,
+                    -gamepad1.left_stick_x * 1.1,
+                    turning, // (gamepad1.left_trigger - gamepad1.right_trigger)
                     true // Robot Centric
             );
 
@@ -171,8 +171,11 @@ public class TELEOP_BLUE extends LinearOpMode {
             if(dPadUp && timer.milliseconds() > 250) {
                 Globals.hanging = true;
                 intake.state = Intake.State.HANG;
-                shooter.state = Shooter.State.STOPPED;
+                shooter.state = Shooter.State.FORCE_STOP;
             }
+
+            Globals.force_drop = gamepad1.a;
+
 
             // TELEMETRY ----------------------------------------------------
 
@@ -185,7 +188,7 @@ public class TELEOP_BLUE extends LinearOpMode {
 //            telemetry.addData("kicker pos ", sensors.readKickerPos()); //0.0006
 //            telemetry.addData("pozitie servo ", shooter.servo_feeder.getPosition());
             telemetry.addData("rpm ", shooter.getRpm(shooter.motor_shooter.getVelocity()));
-//            telemetry.addData("shifter pos ", sensors.readShifterAnalog());
+            telemetry.addData("shifter pos ", sensors.readShifterAnalog());
 //            telemetry.addData("shifter servo pos ", intake.servo_shifter.getPosition());
 //            telemetry.addData("tA ", sensors.getTa());
 //            telemetry.addData("timer ", intake.timer.milliseconds());

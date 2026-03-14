@@ -21,4 +21,10 @@ public class Globals {
         TELEOP
     }
     public static FAZE faze;
+
+    public enum ZONE {
+        FAR,
+        CLOSE
+    }
+    public static ZONE zone;
 }

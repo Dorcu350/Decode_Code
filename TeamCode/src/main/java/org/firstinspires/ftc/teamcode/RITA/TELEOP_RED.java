@@ -95,9 +95,9 @@ public class TELEOP_RED extends LinearOpMode {
             double turning = (gamepad1.left_trigger - gamepad1.right_trigger) * Math.abs((gamepad1.left_trigger - gamepad1.right_trigger));
 
             follower.setTeleOpDrive(
-                    gamepad1.left_stick_y,
-                    gamepad1.left_stick_x * 1.1,
-                    -turning, // (gamepad1.left_trigger - gamepad1.right_trigger)
+                    -gamepad1.left_stick_y,
+                    -gamepad1.left_stick_x * 1.1,
+                    turning, // (gamepad1.left_trigger - gamepad1.right_trigger)
                     true // Robot Centric
             );
 
@@ -168,13 +168,10 @@ public class TELEOP_RED extends LinearOpMode {
             if(dPadUp && timer.milliseconds() > 250) {
                 Globals.hanging = true;
                 intake.state = Intake.State.HANG;
-                shooter.state = Shooter.State.STOPPED;
+                shooter.state = Shooter.State.FORCE_STOP;
             }
 
-            if(gamepad1.a) {
-                Globals.force_drop = true;
-            }else
-                Globals.force_drop = false;
+            Globals.force_drop = gamepad1.a;
 
             // TELEMETRY ----------------------------------------------------
 

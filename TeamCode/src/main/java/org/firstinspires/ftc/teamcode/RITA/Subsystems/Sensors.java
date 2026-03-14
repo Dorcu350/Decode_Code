@@ -53,14 +53,14 @@ public class Sensors {
     // Shifter
 
     public double readShifterAnalog() {return shifter_a.getVoltage();};
-    public boolean shifterInHang() {return readShifterAnalog() <= 2.8;};
-    public boolean shifterInIntake() {return readShifterAnalog() >= 2.9;};
+    public boolean shifterInHang() {return readShifterAnalog() <= 2.9;};
+    public boolean shifterInIntake() {return readShifterAnalog() >= 3;};
 
     // Shooter
 
     public double readStopperAnalog() {return stopper_a.getVoltage();};
 
-    public boolean stopperOpen() {return readStopperAnalog() <= 1.45;};
+    public boolean stopperOpen() {return readStopperAnalog() <= 1.23;};
 
     //Turret
 

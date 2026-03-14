@@ -30,10 +30,11 @@ public class Shooter {
     Sensors sensors;
     public CachingDcMotorEx motor_shooter, motor_shooter_2;
     public CachingServo servo_hood, servo_stopper;
-    public static double kP = 0.005, kS = 0.043, kV = 0.00035, nominal_voltage = 12.0;
+    public static double kP = 0.007, kS = 0.055, kV = 0.00034, nominal_voltage = 12.0;
+    // public static double kP = 0.005, kS = 0.043, kV = 0.00035, nominal_voltage = 12.0;
     final double X_GOAL_BLUE = 0, Y_GOAL_BLUE = 144, X_GOAL_RED = 144, Y_GOAL_RED = 144;
     public static double TARGET_VELOCITY, ppr = 28, TARGET_TEST = 940, TARGET_STOPPED = 0, TARGET_LIMIT_LOWER = 150 , TARGET_LIMIT_UPPER = 100 ;
-    public static double HOOD_TEST = 0.35 , HOOD_DESIRED, STOPPER_OPEN = 0.7, STOPPER_CLOSE = 0.45 ,error = TARGET_TEST; //0.48 in fata de tot
+    public static double HOOD_TEST = 0.575 , HOOD_DESIRED, STOPPER_OPEN = 0.8, STOPPER_CLOSE = 0.48 ,error = TARGET_TEST; //0.45 in spate
     public double distance_from_goal;
     public static boolean initial_release = false, start_your_engines = false, auto = false;
     public static double offset = 0;
@@ -47,12 +48,9 @@ public class Shooter {
         FORCE_STOP
     }
     public State state;
-    public static MultipleRegression regression = new MultipleRegression();
-    public static InterpLUT vel_lut = new InterpLUT();
 
     public void update_shooter(double x, double y, Gamepad gamepad) {
         double vel = motor_shooter.getVelocity();
-
         if(initial_release)
             error = abs(TARGET_VELOCITY - vel);
 
@@ -71,14 +69,12 @@ public class Shooter {
         Globals.distance_goal = distance_from_goal;
 
 
-//        if(distance_from_goal <= 195 && distance_from_goal >= 65) {
-//            HOOD_DESIRED = regression.getHoodAngle(distance_from_goal, vel);
-//            servo_hood.setPosition(HOOD_DESIRED);
-//        }
 //        servo_hood.setPosition(HOOD_TEST);
 
-        servo_hood.setPosition(calculateOptimalAngle(vel));
-        TARGET_VELOCITY = calculateShooterRpm(distance_from_goal);
+        if(!Globals.hanging && distance_from_goal <= 170 && distance_from_goal >= 60) {
+            TARGET_VELOCITY = calculateShooterRpm(distance_from_goal);
+            servo_hood.setPosition(calculateOptimalAngle(distance_from_goal));
+        }
 
 
         switch(state) {
@@ -108,7 +104,8 @@ public class Shooter {
 //                if(distance_from_goal <= 195 && distance_from_goal >= 65)
 //                    TARGET_VELOCITY = vel_lut.get(distance_from_goal) + offset;
 
-//                TARGET_VELOCITY = calculateShooterRpm();
+
+//                TARGET_VELOCITY = TARGET_TEST;
 
 
                 if(noError(error)) {
@@ -142,7 +139,7 @@ public class Shooter {
 
                 Globals.start_transfer = false;
                 Globals.pre_spin = false;
-                start_your_engines = false;
+                start_your_engines = true;
 
                 servo_stopper.setPosition(STOPPER_CLOSE);
 
@@ -263,10 +260,10 @@ public class Shooter {
     }
 
     public double calculateShooterRpm(double distance) {
-        return MathFunctions.clamp(0.0000699301 * Math.pow(distance, 3) + 0.0564436 * Math.pow(distance, 2) - 6.15984 * distance + 1280.51948, 960, 2400);
+        return MathFunctions.clamp(-0.00045066 * Math.pow(distance, 3) + 0.154779 * Math.pow(distance, 2) - 11.19503 * distance + 1353.37995,  1100, 1800);
     }
 
-    public double calculateOptimalAngle(double rpm) {
-        return MathFunctions.clamp((4.33893 * Math.pow(10, -14)) * Math.pow(rpm, 4) - (3.55666 * Math.pow(10, -10)) * Math.pow(rpm, 3) + (9.70003 * Math.pow(10, -7)) * Math.pow(rpm, 2) -0.000957592 * rpm + 0.637412, 0.35, 0.475);
+    public double calculateOptimalAngle(double distance) {
+        return MathFunctions.clamp((7.51101 * Math.pow(10, -8)) * Math.pow(distance, 3) - 0.0000334554 * Math.pow(distance, 2) + 0.00557613 * distance + 0.219282 , 0.45, 0.575);
     }
 }

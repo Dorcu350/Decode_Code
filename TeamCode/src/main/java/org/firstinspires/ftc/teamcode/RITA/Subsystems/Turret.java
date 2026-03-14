@@ -21,10 +21,10 @@ public class Turret {
     Sensors sensors;
     public CachingServo servo_left, servo_right;
 
-    public static double position_test = 0.497, target_angle, relative_angle, target_position, error, position_hang = 0.1, offset = 0;
-    public final double MIN_POS = 0.097, MAX_POS = 0.897, MIN_ANGLE = -120, MAX_ANGLE = 120;
-    public static double X_GOAL_BLUE = 0, Y_GOAL_BLUE = 144, X_GOAL_RED = 144, Y_GOAL_RED = 144;
-    public static double X_GOAL_BLUE_AUTO = 10, X_GOAL_RED_AUTO = 148;
+    public static double position_test = 0.498, target_angle, relative_angle, target_position, error, position_hang = 0.497, offset = 0;
+    public final double MIN_POS = 0.095, MAX_POS = 0.895, MIN_ANGLE = -120, MAX_ANGLE = 120;
+    public static double X_GOAL_BLUE = 1, Y_GOAL_BLUE = 144, X_GOAL_RED = 143, Y_GOAL_RED = 144;
+    public static double X_GOAL_BLUE_AUTO_FAR = 2, X_GOAL_RED_AUTO_FAR = 142, X_GOAL_BLUE_AUTO_CLOSE = 0, X_GOAL_RED_AUTO_CLOSE = 144;
     public static double shooterWorldX, shooterWorldY, shooterOffset = -1.377;
 
     public void update_turret(double x, double y, double heading) {
@@ -37,10 +37,17 @@ public class Turret {
             else
                 target_angle = Math.atan2(Y_GOAL_RED - shooterWorldY, X_GOAL_RED - shooterWorldX);
         }else {
-            if (Globals.alliance == Globals.ALLIANCE.BLUE)
-                target_angle = Math.atan2(Y_GOAL_BLUE - shooterWorldY, X_GOAL_BLUE_AUTO - shooterWorldX);
-            else
-                target_angle = Math.atan2(Y_GOAL_RED - shooterWorldY, X_GOAL_RED_AUTO - shooterWorldX);
+            if(Globals.zone == Globals.ZONE.FAR) {
+                if (Globals.alliance == Globals.ALLIANCE.BLUE)
+                    target_angle = Math.atan2(Y_GOAL_BLUE - shooterWorldY, X_GOAL_BLUE_AUTO_FAR - shooterWorldX);
+                else
+                    target_angle = Math.atan2(Y_GOAL_RED - shooterWorldY, X_GOAL_RED_AUTO_FAR - shooterWorldX);
+            } else {
+                if (Globals.alliance == Globals.ALLIANCE.BLUE)
+                    target_angle = Math.atan2(Y_GOAL_BLUE - shooterWorldY, X_GOAL_BLUE_AUTO_CLOSE - shooterWorldX);
+                else
+                    target_angle = Math.atan2(Y_GOAL_RED - shooterWorldY, X_GOAL_RED_AUTO_CLOSE - shooterWorldX);
+            }
         }
 
         target_angle = AngleUnit.normalizeRadians(target_angle);
@@ -56,6 +63,7 @@ public class Turret {
             moveTo(target_position + offset);
         else
             moveTo(position_hang);
+//        moveTo(position_test);
     }
     public void moveTo(double target) {
         servo_left.setPosition(target);
